@@ -4,9 +4,17 @@
 // includes
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
+
+// defines
+#define AT_MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 
 // typedefs
+typedef enum
+{
+	false,
+	true
+}bool;
+
 typedef enum
 {
 	AT_FAIL,

@@ -5,7 +5,7 @@
 #include "common.h"
 
 // typedefs
-typedef unint64_t at_time;
+typedef int at_time;
 
 typedef struct logicalClock
 {
@@ -23,5 +23,17 @@ typedef struct atClock
 	LogicalClock *lc;
 	PhysicalClock *pc;
 }ATClock;
+
+// definitions
+at_time getLC ();
+at_time getLCCount ();
+at_time getPC ();
+void setLC (at_time time);
+void setLCCount (at_time count);
+void setPC (at_time time);
+ATReturn resetPC ();
+ATReturn resetLC ();
+ATReturn initATClock ();
+ATReturn uninitATClock ();
 
 #endif __CLOCK_H__
