@@ -10,15 +10,14 @@
 typedef enum
 {
 	AT_LOCAL_EVENT,
-	AT_RECT_EVENT,
+	AT_RECV_EVENT,
 	AT_SEND_EVENT
 }ATEventType;
 
 typedef struct atEvent
 {
 	ATEventType eventType;
-	PhysicalClock pc;
-	LogicalClock lc;
+	ATTime atTime;
 }ATEvent;
 
 // declarations

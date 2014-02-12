@@ -5,24 +5,26 @@
 #include "common.h"
 
 // typedefs
-typedef struct atcStackNode
+typedef struct atStackNode
 {
-	void *data;
-	struct atcStackNode* next;
-}ATCStackNode;
+	void* data;
+	struct atStackNode* next;
+}ATStackNode;
 
-typedef struct atcStack
+typedef struct atStack
 {
-	ATCStackNode* head;
-}ATCStack;
+	ATStackNode* head;
+	unsigned int count;
+}ATStack;
 
 //declarations
-ATCStackNode* createATCStackNode (void *data);
-void freeATCStackNode (ATCStackNode *node);
-void createATCStack (ATCStack **ppS);
-void freeATCStack (ATCStack **ppS);
-void ATCStackPush (ATCStack *s, void *data);
-void* ATCStackPop (ATCStack *s);
-void* ATCStackTop (ATCStack *s);
+ATReturn createATStackNode (ATStackNode **ppNode, void *data);
+ATReturn freeATStackNode (ATStackNode *node);
+ATReturn createATStack (ATStack **ppS);
+ATReturn freeATStack (ATStack *pS);
+ATReturn ATStackPush (ATStack *s, void *data);
+ATReturn ATStackPop (void **ppData, ATStack *s);
+ATReturn ATStackTop (void **ppData, ATStack *s);
+ATReturn ATStackCount (unsigned int *count, ATStack *s);
 
 #endif __STACK_H__

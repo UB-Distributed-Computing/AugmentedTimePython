@@ -2,84 +2,124 @@
 #include "stack.h"
 
 // definitions
-ATCStackNode* createATCStackNode (void *data)
+ATReturn createATStackNode (ATStackNode **ppNode, void *data)
 {
-	ATCStackNode *newNode = (ATCStackNode *)malloc(sizeof(ATCStackNode));
+	ATStackNode *newNode;
 
-	if (newNode != NULL)
-	{
-		newNode->data = data;
-		newNode->next = NULL;
-	}
+	if (ppNode == NULL)
+		return AT_NULL_PARAM;
 
-	return newNode;
+	newNode = (ATStackNode*)malloc(sizeof(ATStackNode));
+
+	if (newNode == NULL)
+		return AT_LOW_MEMORY;
+
+	newNode->data = data;
+	newNode->next = NULL;
+	*ppNode = newNode;
+
+	return AT_SUCCESS;
 }
 
-void freeATCStackNode (ATCStackNode *node)
+ATReturn freeATStackNode (ATStackNode *node)
 {
 	if (node != NULL)
 		free (node);
+
+	return AT_SUCCESS;
 }
 
-void createATCStack (ATCStack **ppS)
+ATReturn createATStack (ATStack **ppS)
 {
-	*ppS = (ATCStack*)malloc(sizeof(ATCStack));
-	(*ppS)->head = NULL;
-}
+	ATStack *newStack;
 
-void freeATCStack (ATCStack **ppS)
-{
 	if (ppS == NULL)
-		return;
+		return AT_NULL_PARAM;
 
-	if (*ppS == NULL)
-		return;
+	newStack = (ATCStack*)malloc(sizeof(ATCStack));
 
-	free (*ppS);
-	*ppS = NULL;
+	if (newStack == NULL)
+		return AT_LOW_MEMORY;
+
+	newStack->head = NULL;
+	newStack->count = 0;
+	*ppS = newStack;
+
+	return AT_SUCCESS;
 }
 
-void ATCStackPush (ATCStack *s, void *data)
+ATReturn freeATStack (ATStack *pS)
 {
-	ATCStackNode *node;
+	if (pS == NULL)
+		return AT_NULL_PARAM;
+
+	free (pS);
+
+	return AT_SUCCESS;
+}
+
+ATReturn ATStackPush (ATStack *s, void *data)
+{
+	ATStackNode *node;
+	ATReturn errorCode = AT_SUCCESS;
 
 	if (s == NULL || data == NULL)
-		return;
+		return AT_NULL_PARAM;
 
-	node = createATCStackNode (data);
-	if (node == NULL)
-		return;
+	errorCode = createATStackNode (&node, data);
+	if (errorCode != AT_SUCCESS)
+		return errorCode;
 
 	node->next = s->head;
 	s->head = node;
+	s->count++;
+
+	return AT_SUCCESS;
 }
 
-void* ATCStackPop (ATCStack *s)
+ATReturn ATStackPop (void **ppData, ATStack *s)
 {
-	ATCStackNode *next;
-	void *retData;
+	ATStackNode *next;
+	ATReturn errorCode = AT_SUCCESS;
 
-	if (s == NULL)
-		return NULL;
+	if (ppData == NULL || s == NULL)
+		return AT_NULL_PARAM;
 
 	if (s->head == NULL)
-		return NULL;
+	{
+		*ppData = NULL;
+	}
+	else
+	{
+		*ppData = s->head->data;
+		next = s->head->next;
+		errorCode = freeATStackNode (s->head);
+		s->head = next;
+		s->count--;
+	}
 
-	retData = s->head->data;
-	next = s->head->next;
-	freeATCStackNode (s->head);
-	s->head = next;
-
-	return retData;
+	return errorCode;
 }
 
-void* ATCStackTop (ATCStack *s)
+ATReturn ATStackTop (void **ppData, ATStack *s)
 {
-	if (s == NULL)
-		return NULL;
+	if (ppData == NULL || s == NULL)
+		return AT_NULL_PARAM;
 
 	if (s->head == NULL)
-		return NULL;
+		*ppData = NULL;
+	else
+		*ppData = s->head->data;
 
-	return s->head->data;
+	return AT_SUCCESS;
+}
+
+ATReturn ATStackCount (unsigned int *count, ATStack *s)
+{
+	if (s == NULL || count == NULL)
+		return AT_NULL_PARAM;
+
+	*count = s->count;
+
+	return AT_SUCCESS;
 }

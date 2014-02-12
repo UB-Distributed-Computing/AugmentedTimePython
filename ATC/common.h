@@ -9,6 +9,8 @@
 #define AT_MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 
 // typedefs
+typedef unsigned long long uint64_t;
+
 typedef enum
 {
 	false,
@@ -20,7 +22,7 @@ typedef enum
 	AT_FAIL,
 	AT_SUCCESS,
 	AT_ALREADY_INITIALIZED,
-	AT_UN_INITIALIZED,
+	AT_NOT_INITIALIZED,
 	AT_LOW_MEMORY,
 	AT_NULL_PARAM
 }ATReturn;
