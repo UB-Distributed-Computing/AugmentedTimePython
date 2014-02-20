@@ -17,15 +17,15 @@ typedef enum
 typedef struct atEvent
 {
 	ATEventType eventType;
-	ATTime atTime;
+	ATTime *atTime;
 }ATEvent;
 
 // declarations
 ATReturn initATEvent ();
 ATReturn uninitATEvent ();
-ATEvent* createEvent ();
-void freeEvent (ATEvent *event);
-ATEvent* createSendEvent ();
-ATEvent* createRecvEvent (at_time messagePC, at_time messageLC, at_time messageLCCount);
+ATReturn createEvent (ATEvent **ppEvent);
+ATReturn freeEvent (ATEvent *atEvent);
+ATReturn createSendEvent (ATEvent **ppEvent);
+ATReturn createRecvEvent (ATEvent **ppEvent, ATTime *messageTime);
 
 #endif __EVENT_H__

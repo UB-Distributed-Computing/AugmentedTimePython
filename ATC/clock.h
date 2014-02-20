@@ -50,6 +50,30 @@ typedef struct atTime
 	} \
 }
 
+#define AT_COPY_TIME(AT_DESTINATION, AT_SOURCE) { \
+	if ((AT_DESTINATION) != NULL && (AT_SOURCE) != NULL) \
+	{ \
+		if ((AT_DESTINATION)->lc != NULL && (AT_DESTINATION)->pc != NULL && (AT_SOURCE)->lc != NULL && (AT_SOURCE)->pc != NULL) \
+		{ \
+			(AT_DESTINATION)->lc->time = (AT_SOURCE)->lc->time; \
+			(AT_DESTINATION)->lc->count = (AT_SOURCE)->lc->count; \
+			(AT_DESTINATION)->pc->time = (AT_SOURCE)->pc->time; \
+		} \
+	} \
+}
+
+#define AT_TIME_ZERO(AT_TIME) { \
+	if ((AT_TIME) != NULL) \
+	{ \
+		if ((AT_TIME)->lc != NULL && (AT_TIME)->pc != NULL) \
+		{ \
+			(AT_TIME)->lc->time = 0; \
+			(AT_TIME)->lc->count = 0; \
+			(AT_TIME)->pc->time = 0; \
+		} \
+	} \
+}
+
 // declarations
 ATReturn getLCTime (at_time *time);
 ATReturn getLCCount (at_time *count);
@@ -59,6 +83,8 @@ ATReturn setLCCount (at_time count);
 ATReturn setPCTime (at_time time);
 ATReturn resetPC ();
 ATReturn resetLC ();
+ATReturn createATTime (ATTime **ppATTime);
+ATReturn freeATTime (ATTime *pTime);
 ATReturn initATClock ();
 ATReturn uninitATClock ();
 
