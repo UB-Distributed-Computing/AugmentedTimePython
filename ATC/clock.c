@@ -120,6 +120,51 @@ ATReturn resetLC ()
 	return AT_SUCCESS;
 }
 
+ATReturn createATTime (ATTime **ppATTime)
+{
+	ATTime *pTime = NULL;
+
+	if (ppATTime == NULL)
+		return AT_NULL_PARAM;
+
+	pTime = (ATTime*)malloc(sizeof(ATTime));
+	if (pTime == NULL)
+		return AT_LOW_MEMORY;
+
+	pTime->lc = (LogicalTime*)malloc(sizeof(LogicalTime));
+	if (pTime->lc == NULL)
+	{
+		free (pTime);
+		return AT_LOW_MEMORY;
+	}
+
+	pTime->pc = (PhysicalTime*)malloc(sizeof(PhysicalTime));
+	if (pTime->pc == NULL)
+	{
+		free (pTime->lc);
+		free (pTime);
+
+		return AT_LOW_MEMORY;
+	}
+
+	return AT_SUCCESS;
+}
+
+ATReturn freeATTime (ATTime *pTime)
+{
+	if (pTime == NULL)
+		return AT_NULL_PARAM;
+
+	if (pTime->lc == NULL || pTime->pc == NULL)
+		return AT_FAIL;
+
+	free (pTime->lc);
+	free (pTime->pc);
+	free (pTime);
+
+	return AT_SUCCESS;
+}
+
 ATReturn initATClock ()
 {
 	if (atc != NULL)

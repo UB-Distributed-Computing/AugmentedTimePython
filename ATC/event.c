@@ -2,14 +2,14 @@
 #include "event.h"
 
 // globals
-ATCStack *eventStack = NULL;
+ATStack *eventStack = NULL;
 
 ATReturn initATEvent ()
 {
 	if (eventStack != NULL)
 		return AT_ALREADY_INITIALIZED;
 
-	createATCStack (&eventStack);
+	createATStack (&eventStack);
 	if (eventStack == NULL)
 		return AT_FAIL;
 
@@ -21,105 +21,166 @@ ATReturn uninitATEvent ()
 	if (eventStack == NULL)
 		return AT_UN_INITIALIZED;
 
-	freeATCStack (&eventStack);
+	freeATStack (eventStack);
+	eventStack = NULL;
 
 	return AT_SUCCESS;
 }
 
-ATEvent* createEvent ()
+ATReturn createEvent (ATEvent **ppEvent)
 {
-	ATEvent *event = NULL;
+	ATEvent *atEvent = NULL;
 
-	event = (ATEvent*)malloc(sizeof(ATEvent));
+	atEvent = (ATEvent*)malloc(sizeof(ATEvent));
+	if (atEvent == NULL)
+		return AT_LOW_MEMORY;
 
-	return event;
+	if (createATTime(&(atEvent->atTime)) != AT_SUCCESS)
+	{
+		freeATTime (atEvent->atTime);
+		return AT_FAIL;
+	}
+
+	*ppEvent = atEvent;
+
+	return AT_SUCCESS;
 }
 
-void freeEvent (ATEvent *event)
+ATReturn freeEvent (ATEvent *atEvent)
 {
-	if (event != NULL)
-		free (event);
+	ATReturn retVal = AT_SUCCESS;
+
+	if (atEvent != NULL)
+	{
+		retVal = freeATTime (atEvent->atTime);
+		free (atEvent);
+	}
+
+	return retVal;
 }
 
-// To create a send event f at process j with physical clock ph.j
-ATEvent* createSendEvent ()
+ATReturn createSendEvent (ATEvent **ppEvent)
 {
 	ATEvent *sendEvent = NULL;
-	at_time physicalTime, oldLogicalTime, newLogicalTime, count;
+	at_time eventLogicalTime, eventLogicalCount;
+	ATTime *currentTime = NULL;
 
-	sendEvent = createEvent();
-	oldLogicalTime = getLC();
-	physicalTime = getPC();
-	count = getLCCount();
+	if (ppEvent == NULL)
+		return AT_NULL_PARAM;
 
-	if (sendEvent != NULL)
+	if (createATTime(&currentTime) != AT_SUCCESS)
+		return AT_FAIL;
+
+	if (createEvent(&sendEvent) != AT_SUCCESS)
 	{
-		newLogicalTime = AT_MAX(oldLogicalTime, physicalTime);
-
-		if (newLogicalTime == oldLogicalTime)
-			count++;
-		else
-			count = 0;
-
-		sendEvent->eventType = AT_SEND_EVENT;
-		sendEvent->lc.time = newLogicalTime;
-		sendEvent->lc.count = count;
-		sendEvent->pc.time = physicalTime;
-
-		ATCStackPush (eventStack, sendEvent);
-
-		setLC (newLogicalTime);
-		setLCCount (count);
+		freeATTime (currentTime);
+		return AT_FAIL;
 	}
 
-	return sendEvent;
+	SET_LC_TIME (currentTime->lc, getLCTime())
+	SET_LC_COUNT (currentTime->lc, getLCCount())
+	SET_PC_TIME (currentTime->pc, getPCTime())
+
+	eventLogicalTime = AT_MAX(GET_LC_TIME(currentTime->lc), GET_PC_TIME(currentTime->pc));
+
+	if (eventLogicalTime == GET_LC_TIME(currentTime->lc))
+		eventLogicalCount = GET_LC_COUNT(currentTime->lc) + 1;
+	else
+		eventLogicalCount = 0;
+
+	sendEvent->eventType = AT_SEND_EVENT;
+	SET_LC_TIME (sendEvent->atTime->lc, eventLogicalTime)
+	SET_LC_COUNT (sendEvent->atTime->lc, eventLogicalCount)
+	SET_PC_TIME (sendEvent->atTime->pc, GET_PC_TIME(currentTime->pc))
+
+	ATStackPush (eventStack, sendEvent);
+
+	setLCTime (eventLogicalCount);
+	setLCCount (eventLogicalCount);
+
+	*ppEvent = sendEvent;
+	freeATTime (currentTime);
+
+	return AT_SUCCESS;
 }
 
-ATEvent* createRecvEvent (at_time messagePC, at_time messageLC, at_time messageLCCount)
+ATReturn createRecvEvent (ATEvent **ppEvent, ATTime *messageTime)
 {
 	ATEvent *recvEvent = NULL, *lastEvent = NULL;
-	at_time physicalTime, newLogicalTime, count, lastEventPC = 0, lastEventLC = 0, lastEventLCCount = 0;
+	at_time eventLogicalTime, eventLogicalCount;
+	ATTime *currentTime = NULL, *lastEventTime = NULL;
 
-	lastEvent = (ATEvent*)ATCStackTop(eventStack);
+	if (ppEvent == NULL || messageTime == NULL)
+		return AT_NULL_PARAM;
+
+	if (messageTime->lc == NULL || messageTime->pc == NULL)
+		return AT_FAIL;
+
+	if (createATTime(&lastEventTime) != AT_SUCCESS)
+		return AT_FAIL;
+
+	if (createATTime(&currentTime) != AT_SUCCESS)
+	{
+		freeATTime (lastEventTime);
+		return AT_FAIL;
+	}
+
+	lastEvent = (ATEvent*)ATStackTop(eventStack);
 	if (lastEvent != NULL)
 	{
-		lastEventLC = lastEvent->lc.time;
-		lastEventLCCount = lastEvent->lc.count;
-		lastEventPC = lastEvent->pc.time;
+		AT_COPY_TIME(lastEventTime, lastEvent->atTime)
 	}
-	recvEvent = createEvent();
+	else
+	{
+		AT_TIME_ZERO (lastEventTime)
+	}
+
+	if (createEvent(&recvEvent) != AT_SUCCESS)
+	{
+		freeATTime(currentTime);
+		freeATTime(lastEventTime);
+
+		return AT_FAIL;
+	}
+
+	SET_LC_TIME (currentTime->lc, getLCTime())
+	SET_LC_COUNT (currentTime->lc, getLCCount())
+	SET_PC_TIME (currentTime->pc, getPCTime())
 
 	if (recvEvent != NULL)
 	{
-		physicalTime = getPC();
-		newLogicalTime = AT_MAX (lastEventLC, messageLC);
-		newLogicalTime = AT_MAX (newLogicalTime, physicalTime);
+		eventLogicalTime = AT_MAX (GET_LC_TIME(lastEventTime->lc), GET_LC_TIME(messageTime->lc));
+		eventLogicalTime = AT_MAX (eventLogicalTime, GET_PC_TIME(currentTime->pc));
 
-		if (newLogicalTime == lastEventLC && newLogicalTime == messageLC)
+		if ((eventLogicalTime == GET_LC_TIME(lastEventTime->lc)) && (eventLogicalTime == GET_LC_TIME(messageTime->lc)))
 		{
-			count = AT_MAX (lastEventLCCount, messageLCCount) + 1;
+			eventLogicalCount = AT_MAX (GET_LC_COUNT(lastEventTime->lc), GET_LC_COUNT(messageTime->lc)) + 1;
 		}
-		else if (newLogicalTime == lastEventLC)
+		else if (eventLogicalTime == GET_LC_TIME(lastEventTime->lc))
 		{
-			count = lastEventLCCount + 1;
+			eventLogicalCount = GET_LC_COUNT(lastEventTime->lc) + 1;
 		}
-		else if (newLogicalTime == messageLC)
+		else if (eventLogicalTime == GET_LC_TIME(messageTime->lc))
 		{
-			count = messageLCCount + 1;
+			eventLogicalCount = GET_LC_COUNT(messageTime->lc) + 1;
 		}
 		else
 		{
-			count = 0;
+			eventLogicalCount = 0;
 		}
 
 		recvEvent->eventType = AT_RECT_EVENT;
-		recvEvent->lc.time = newLogicalTime;
-		recvEvent->lc.count = count;
-		recvEvent->pc.time = physicalTime;
+		SET_LC_TIME (recvEvent->atTime->lc, eventLogicalTime)
+		SET_LC_COUNT (recvEvent->atTime->lc, eventLogicalCount)
+		SET_PC_TIME (recvEvent->atTime->pc, GET_PC_TIME(currentTime->pc))
 
-		setLC (newLogicalTime);
-		setLCCount (count);
+		setLCTime (eventLogicalTime);
+		setLCCount (eventLogicalCount);
 	}
 
-	return recvEvent;
+	*ppEvent = recvEvent;
+	freeATTime (lastEventTime);
+	freeATTime (currentTime);
+
+	return AT_SUCCESS;
 }
