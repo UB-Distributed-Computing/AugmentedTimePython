@@ -1,5 +1,10 @@
 // includes
 #include "clock.h"
+#ifndef OS_WIN
+#include <sys/time.h>
+#else /* OS_WIN */
+#include <windows.h>
+#endif /* OS_WIN */
 
 // globals
 ATTime *atc = NULL;
@@ -39,6 +44,12 @@ ATReturn getLCCount (at_time *count)
 
 ATReturn getPCTime (at_time *time)
 {
+#ifndef OS_WIN
+	struct timeval tv;
+#else /* OS_WIN */
+	SYSTEMTIME SystemTime;
+#endif /* OS_WIN */
+
 	if (time == NULL)
 		return AT_NULL_PARAM;
 
@@ -48,7 +59,41 @@ ATReturn getPCTime (at_time *time)
 	if (atc->pc == NULL)
 		return AT_FAIL;
 
+#ifndef OS_WIN
+	if (gettimeofday(&tv, NULL) != 0)
+		return AT_FAIL;
+
+	atc->pc->time = tv.tv_sec;
+#else /* OS_WIN */
+	GetSystemTime(&SystemTime);
+	atc->pc->time = SystemTime.wSecond;
+#endif /* OS_WIN */
+
 	*time = atc->pc->time;
+
+	return AT_SUCCESS;
+}
+
+ATReturn getATTime (ATTime *time)
+{
+	ATReturn retVal = AT_SUCCESS;
+
+	if (time == NULL)
+		return AT_NULL_PARAM;
+	if (time->lc == NULL || time->pc == NULL)
+		return AT_FAIL;
+
+	retVal = getLCTime (&(time->lc->time));
+	if (retVal != AT_SUCCESS)
+		return retVal;
+
+	retVal = getLCCount (&(time->lc->count));
+	if (retVal != AT_SUCCESS)
+		return retVal;
+
+	retVal = getPCTime (&(time->pc->time));
+	if (retVal != AT_SUCCESS)
+		return retVal;
 
 	return AT_SUCCESS;
 }
@@ -94,14 +139,27 @@ ATReturn setPCTime (at_time time)
 
 ATReturn resetPC ()
 {
+#ifndef OS_WIN
+	struct timeval tv;
+#else /* OS_WIN */
+	SYSTEMTIME SystemTime;
+#endif /* OS_WIN */
+
 	if (atc == NULL)
 		return AT_NOT_INITIALIZED;
 
 	if (atc->pc == NULL)
 		return AT_FAIL;
-	
-	// TODO: resetting time means querying time from NTP?
-	atc->pc->time = 0;
+
+#ifndef OS_WIN
+	if (gettimeofday(&tv, NULL) != 0)
+		return AT_FAIL;
+
+	atc->pc->time = tv.tv_sec;
+#else /* OS_WIN */
+	GetSystemTime(&SystemTime);
+	atc->pc->time = SystemTime.wSecond;
+#endif /* OS_WIN */
 
 	return AT_SUCCESS;
 }

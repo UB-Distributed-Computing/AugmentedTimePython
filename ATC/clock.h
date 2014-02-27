@@ -78,6 +78,7 @@ typedef struct atTime
 ATReturn getLCTime (at_time *time);
 ATReturn getLCCount (at_time *count);
 ATReturn getPCTime (at_time *time);
+ATReturn getATTime (ATTime *time);
 ATReturn setLCTime (at_time time);
 ATReturn setLCCount (at_time count);
 ATReturn setPCTime (at_time time);
