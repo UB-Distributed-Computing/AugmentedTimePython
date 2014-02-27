@@ -19,7 +19,7 @@ ATReturn initATEvent ()
 ATReturn uninitATEvent ()
 {
 	if (eventStack == NULL)
-		return AT_UN_INITIALIZED;
+		return AT_NOT_INITIALIZED;
 
 	freeATStack (eventStack);
 	eventStack = NULL;
@@ -77,9 +77,11 @@ ATReturn createSendEvent (ATEvent **ppEvent)
 		return AT_FAIL;
 	}
 
-	SET_LC_TIME (currentTime->lc, getLCTime())
-	SET_LC_COUNT (currentTime->lc, getLCCount())
-	SET_PC_TIME (currentTime->pc, getPCTime())
+	if (getATTime(currentTime) != AT_SUCCESS)
+	{
+		freeATTime (currentTime);
+		return AT_FAIL;
+	}
 
 	eventLogicalTime = AT_MAX(GET_LC_TIME(currentTime->lc), GET_PC_TIME(currentTime->pc));
 
@@ -109,6 +111,7 @@ ATReturn createRecvEvent (ATEvent **ppEvent, ATTime *messageTime)
 	ATEvent *recvEvent = NULL, *lastEvent = NULL;
 	at_time eventLogicalTime, eventLogicalCount;
 	ATTime *currentTime = NULL, *lastEventTime = NULL;
+	void *top = NULL;
 
 	if (ppEvent == NULL || messageTime == NULL)
 		return AT_NULL_PARAM;
@@ -125,7 +128,13 @@ ATReturn createRecvEvent (ATEvent **ppEvent, ATTime *messageTime)
 		return AT_FAIL;
 	}
 
-	lastEvent = (ATEvent*)ATStackTop(eventStack);
+	if (ATStackTop(&top, eventStack) != AT_SUCCESS)
+	{
+		freeATTime (lastEventTime);
+		return AT_FAIL;
+	}
+
+	lastEvent = (ATEvent*)top;
 	if (lastEvent != NULL)
 	{
 		AT_COPY_TIME(lastEventTime, lastEvent->atTime)
@@ -135,7 +144,7 @@ ATReturn createRecvEvent (ATEvent **ppEvent, ATTime *messageTime)
 		AT_TIME_ZERO (lastEventTime)
 	}
 
-	if (createEvent(&recvEvent) != AT_SUCCESS)
+	if (getATTime(currentTime) != AT_SUCCESS)
 	{
 		freeATTime(currentTime);
 		freeATTime(lastEventTime);
@@ -143,9 +152,13 @@ ATReturn createRecvEvent (ATEvent **ppEvent, ATTime *messageTime)
 		return AT_FAIL;
 	}
 
-	SET_LC_TIME (currentTime->lc, getLCTime())
-	SET_LC_COUNT (currentTime->lc, getLCCount())
-	SET_PC_TIME (currentTime->pc, getPCTime())
+	if (createEvent(&recvEvent) != AT_SUCCESS)
+	{
+		freeATTime(currentTime);
+		freeATTime(lastEventTime);
+
+		return AT_FAIL;
+	}
 
 	if (recvEvent != NULL)
 	{
@@ -169,7 +182,7 @@ ATReturn createRecvEvent (ATEvent **ppEvent, ATTime *messageTime)
 			eventLogicalCount = 0;
 		}
 
-		recvEvent->eventType = AT_RECT_EVENT;
+		recvEvent->eventType = AT_RECV_EVENT;
 		SET_LC_TIME (recvEvent->atTime->lc, eventLogicalTime)
 		SET_LC_COUNT (recvEvent->atTime->lc, eventLogicalCount)
 		SET_PC_TIME (recvEvent->atTime->pc, GET_PC_TIME(currentTime->pc))

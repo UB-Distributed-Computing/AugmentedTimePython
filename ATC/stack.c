@@ -36,7 +36,7 @@ ATReturn createATStack (ATStack **ppS)
 	if (ppS == NULL)
 		return AT_NULL_PARAM;
 
-	newStack = (ATCStack*)malloc(sizeof(ATCStack));
+	newStack = (ATStack*)malloc(sizeof(ATStack));
 
 	if (newStack == NULL)
 		return AT_LOW_MEMORY;
