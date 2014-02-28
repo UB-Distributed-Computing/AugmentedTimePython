@@ -7,14 +7,14 @@
 // typedefs
 typedef struct atStackNode
 {
-	void* data;
-	struct atStackNode* next;
+    void* data;
+    struct atStackNode* next;
 }ATStackNode;
 
 typedef struct atStack
 {
-	ATStackNode* head;
-	unsigned int count;
+    ATStackNode* head;
+    unsigned int count;
 }ATStack;
 
 //declarations
@@ -27,4 +27,4 @@ ATReturn ATStackPop (void **ppData, ATStack *s);
 ATReturn ATStackTop (void **ppData, ATStack *s);
 ATReturn ATStackCount (unsigned int *count, ATStack *s);
 
-#endif __STACK_H__
+#endif /* __STACK_H__ */

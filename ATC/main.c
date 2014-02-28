@@ -5,25 +5,25 @@
 
 int main ()
 {
-	ATEvent *newEvent = NULL;
-	ATTime *currentTime = NULL;
+    ATEvent *newEvent = NULL;
+    ATTime *currentTime = NULL;
 
-	// initializations
-	if (initATClock() != AT_SUCCESS)
-		return -1;
-	if (initATEvent() != AT_SUCCESS)
-		return -1;
+    // initializations
+    if (initATClock() != AT_SUCCESS)
+        return -1;
+    if (initATEvent() != AT_SUCCESS)
+        return -1;
 
-	createSendEvent (&newEvent);
-	createATTime (&currentTime);
-	getATTime (currentTime);
-	createRecvEvent (&newEvent, currentTime);
+    createSendEvent (&newEvent);
+    createATTime (&currentTime);
+    getATTime (currentTime);
+    createRecvEvent (&newEvent, currentTime);
 
-	dumpEvents ("dump.log");
+    dumpEvents ("dump.log");
 
-	// uninitializations
-	uninitATEvent();
-	uninitATClock();
+    // uninitializations
+    uninitATEvent();
+    uninitATClock();
 
-	return 0;
+    return 0;
 }
