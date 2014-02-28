@@ -205,6 +205,8 @@ ATReturn createATTime (ATTime **ppATTime)
 		return AT_LOW_MEMORY;
 	}
 
+	*ppATTime = pTime;
+
 	return AT_SUCCESS;
 }
 

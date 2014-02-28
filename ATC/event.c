@@ -4,6 +4,39 @@
 // globals
 ATStack *eventStack = NULL;
 
+ATReturn dumpEvents (char *filename)
+{
+	FILE *f = NULL;
+	ATStackNode *stackNode = NULL;
+	ATEvent *atEvent = NULL;
+
+	if (filename == NULL)
+		return AT_NULL_PARAM;
+
+	f = fopen(filename, "w");
+	if (f == NULL)
+		return AT_FAIL;
+
+	if (eventStack == NULL)
+	{
+		fclose(f);
+		return AT_SUCCESS;
+	}
+
+	for (stackNode = eventStack->head; stackNode != NULL; stackNode = stackNode->next)
+	{
+		atEvent = (ATEvent*)(stackNode->data);
+		fprintf (f, "\n");
+		fprintf (f, "Event Type: %d\n", atEvent->eventType);
+		fprintf (f, "Time: logical = %llu, count = %llu, physical = %llu\n", GET_LC_TIME(atEvent->atTime->lc), 
+			GET_LC_COUNT(atEvent->atTime->lc), GET_PC_TIME(atEvent->atTime->pc));
+		fprintf (f, "\n");
+	}
+
+	fclose(f);
+	return AT_SUCCESS;
+}
+
 ATReturn initATEvent ()
 {
 	if (eventStack != NULL)
@@ -18,8 +51,20 @@ ATReturn initATEvent ()
 
 ATReturn uninitATEvent ()
 {
+	ATEvent *atEvent = NULL;
+
 	if (eventStack == NULL)
 		return AT_NOT_INITIALIZED;
+
+	while (1)
+	{
+		if (ATStackPop(&atEvent, eventStack) != AT_SUCCESS)
+			break;
+		if (atEvent == NULL)
+			break;
+
+		freeEvent (atEvent);
+	}
 
 	freeATStack (eventStack);
 	eventStack = NULL;
