@@ -6,6 +6,7 @@
 int main ()
 {
 	ATEvent *newEvent = NULL;
+	ATTime *currentTime = NULL;
 
 	// initializations
 	if (initATClock() != AT_SUCCESS)
@@ -14,6 +15,9 @@ int main ()
 		return -1;
 
 	createSendEvent (&newEvent);
+	createATTime (&currentTime);
+	getATTime (currentTime);
+	createRecvEvent (&newEvent, currentTime);
 
 	dumpEvents ("dump.log");
 

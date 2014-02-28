@@ -27,7 +27,21 @@ ATReturn dumpEvents (char *filename)
 	{
 		atEvent = (ATEvent*)(stackNode->data);
 		fprintf (f, "\n");
-		fprintf (f, "Event Type: %d\n", atEvent->eventType);
+		switch (atEvent->eventType)
+		{
+		case AT_RECV_EVENT:
+			fprintf (f, "Event Type: Receive\n");
+			break;
+		case AT_SEND_EVENT:
+			fprintf (f, "Event Type: Send\n");
+			break;
+		case AT_LOCAL_EVENT:
+			fprintf (f, "Event Type: Local\n");
+			break;
+		default:
+			fprintf (f, "Event Type: Unknown\n");
+			break;
+		}
 		fprintf (f, "Time: logical = %llu, count = %llu, physical = %llu\n", GET_LC_TIME(atEvent->atTime->lc), 
 			GET_LC_COUNT(atEvent->atTime->lc), GET_PC_TIME(atEvent->atTime->pc));
 		fprintf (f, "\n");
@@ -235,6 +249,8 @@ ATReturn createRecvEvent (ATEvent **ppEvent, ATTime *messageTime)
 		setLCTime (eventLogicalTime);
 		setLCCount (eventLogicalCount);
 	}
+
+	ATStackPush (eventStack, recvEvent);
 
 	*ppEvent = recvEvent;
 	freeATTime (lastEventTime);

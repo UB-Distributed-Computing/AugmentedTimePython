@@ -46,8 +46,6 @@ ATReturn getPCTime (at_time *time)
 {
 #ifndef OS_WIN
 	struct timeval tv;
-#else /* OS_WIN */
-	SYSTEMTIME SystemTime;
 #endif /* OS_WIN */
 
 	if (time == NULL)
@@ -65,8 +63,7 @@ ATReturn getPCTime (at_time *time)
 
 	atc->pc->time = tv.tv_sec;
 #else /* OS_WIN */
-	GetSystemTime(&SystemTime);
-	atc->pc->time = SystemTime.wSecond;
+	atc->pc->time = GetTickCount64();
 #endif /* OS_WIN */
 
 	*time = atc->pc->time;
@@ -141,8 +138,6 @@ ATReturn resetPC ()
 {
 #ifndef OS_WIN
 	struct timeval tv;
-#else /* OS_WIN */
-	SYSTEMTIME SystemTime;
 #endif /* OS_WIN */
 
 	if (atc == NULL)
@@ -157,8 +152,7 @@ ATReturn resetPC ()
 
 	atc->pc->time = tv.tv_sec;
 #else /* OS_WIN */
-	GetSystemTime(&SystemTime);
-	atc->pc->time = SystemTime.wSecond;
+	atc->pc->time = GetTickCount64();
 #endif /* OS_WIN */
 
 	return AT_SUCCESS;
