@@ -1,10 +1,9 @@
 CC=gcc
 SOURCES=main.c
-HEADERS=./libat/headers
 OBJECTS=$(SOURCES:.c=.o)
 
-CFLAGS=-c -fPIC -Wall -I$(HEADERS)
-LDFLAGS=-L./libat/ -lat
+CFLAGS=-c -fPIC -Wall -I./libat/headers -I/home/csgrad/bavva/installed/zeromq/include
+LDFLAGS=-L./libat/ -lat -L/home/csgrad/bavva/installed/zeromq/lib -lzmq
 
 all: $(SOURCES) driver install
 	rm -rf $(OBJECTS)
