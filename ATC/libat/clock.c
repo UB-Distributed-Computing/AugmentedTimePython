@@ -61,7 +61,7 @@ ATReturn getPCTime (at_time *time)
     if (gettimeofday(&tv, NULL) != 0)
         return AT_FAIL;
 
-    atc->pc->time = tv.tv_sec;
+    atc->pc->time = tv.tv_sec * 1000000 + tv.tv_usec;
 #else /* OS_WIN */
     atc->pc->time = GetTickCount64();
 #endif /* OS_WIN */
@@ -150,7 +150,7 @@ ATReturn resetPC ()
     if (gettimeofday(&tv, NULL) != 0)
         return AT_FAIL;
 
-    atc->pc->time = tv.tv_sec;
+    atc->pc->time = tv.tv_sec * 1000000 + tv.tv_usec;
 #else /* OS_WIN */
     atc->pc->time = GetTickCount64();
 #endif /* OS_WIN */

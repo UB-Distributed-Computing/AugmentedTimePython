@@ -8,6 +8,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 // defines
 #define LOG printf
@@ -18,7 +19,9 @@
 #define AT_MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 
 // typedefs
+#ifdef OS_WIN
 typedef unsigned long long uint64_t;
+#endif /* OS_WIN */
 
 typedef enum
 {

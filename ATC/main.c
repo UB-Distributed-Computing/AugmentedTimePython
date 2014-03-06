@@ -6,7 +6,7 @@
 #include <zmq.h>
 #include <pthread.h>
 
-void startReceiver (void *data)
+void* startReceiver (void *data)
 {
     void *context = NULL, *receiver = NULL;
     char buffer [24];
@@ -26,21 +26,23 @@ void startReceiver (void *data)
     {
         if (zmq_recv (receiver, buffer, 24, ZMQ_NOBLOCK) != 0)
         {
-            sleep (100);
+            sleep (1);
             continue;
         }
         SET_LC_TIME (messageTime->lc, *((at_time*)(&buffer[0])))
         SET_LC_COUNT (messageTime->lc, *((at_time*)(&buffer[8])))
         SET_PC_TIME (messageTime->lc, *((at_time*)(&buffer[16])))
-        createRecvEvent (&newEvent, currentTime);
+        createRecvEvent (&newEvent, messageTime);
 
         i++;
     }
 
     freeATTime (messageTime);
+
+    return NULL;
 }
 
-void startSender (void *data)
+void* startSender (void *data)
 {
     char buffer[24];
     char receiverUrl[24];
@@ -53,12 +55,12 @@ void startSender (void *data)
     createATTime (&messageTime);
 
     if (receiver == NULL)
-        return;
+        return NULL;
     
     context = zmq_ctx_new ();
     sender = zmq_socket (context, ZMQ_REQ);
 
-    sprintf(receiverUrl, "tcp://%s", receiver);
+    sprintf(receiverUrl, "tcp://%s:12345", receiver);
     rc = zmq_connect (sender, receiverUrl);
     assert (rc == 0);
 
@@ -69,7 +71,7 @@ void startSender (void *data)
         sprintf(buffer, "%llu%llu%llu", GET_LC_TIME(messageTime->lc), GET_LC_COUNT(messageTime->lc), GET_PC_TIME(messageTime->pc));
         if (zmq_send(sender, buffer, 24, ZMQ_NOBLOCK) != 0)
         {
-            sleep (100);
+            sleep (1);
             continue;
         }
         createSendEvent (&newEvent);
@@ -78,12 +80,12 @@ void startSender (void *data)
     }
 
     freeATTime (messageTime);
+
+    return NULL;
 }
 
-int main (char** argv, int argc)
+int main (int argc, char** argv)
 {
-    ATEvent *newEvent = NULL;
-    ATTime *currentTime = NULL;
     int err;
     pthread_t sender1, sender2, receiver;
 
@@ -97,11 +99,12 @@ int main (char** argv, int argc)
         return -1;
 
     err = pthread_create(&receiver, NULL, &startReceiver, (void*)NULL);
-    assert (err != 0)
+    assert (err == 0);
+    sleep (10);
     err = pthread_create(&sender1, NULL, &startSender, (void*)argv[1]);
-    assert (err != 0)
+    assert (err == 0);
     err = pthread_create(&sender2, NULL, &startSender, (void*)argv[2]);
-    assert (err != 0)
+    assert (err == 0);
 
     dumpEvents ("dump.log");
 
