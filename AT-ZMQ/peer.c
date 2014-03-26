@@ -51,9 +51,9 @@ void* Receiver(void* dummy)
         SET_LC_COUNT (messageTime->lc, LogCnt)
         SET_PC_TIME (messageTime->pc, PhyTime)
 
-        pthread_mutex_lock(g_lock_lc);
+        pthread_mutex_lock(&g_lock_lc);
         createRecvEvent (&newEvent, messageTime);
-        pthread_mutex_unlock(g_lock_lc);
+        pthread_mutex_unlock(&g_lock_lc);
         // LC logic ends
     }
 
@@ -121,7 +121,7 @@ int main (int argc, char* argv[])
     {
         for (int i = 0; i < nPeers; i++)
         {
-            pthread_mutex_lock(g_lock_lc);
+            pthread_mutex_lock(&g_lock_lc);
 
             createSendEvent (&newEvent);
             messageTime = newEvent->atTime;
@@ -133,7 +133,7 @@ int main (int argc, char* argv[])
             zmq_recv(responder[i], buffer,5,0);
             // copy messageTime to send buffer to send
 
-            pthread_mutex_unlock(g_lock_lc);
+            pthread_mutex_unlock(&g_lock_lc);
         }
 
         sleepTime = rand() % 5;
