@@ -10,7 +10,6 @@
 #include "event.h"
 #include "clock.h"
 
-
 char g_myID[3];
 pthread_mutex_t g_lock_lc;
 unsigned long g_lc;
@@ -47,20 +46,15 @@ void* Receiver(void* dummy)
 		long int LogCnt = strtol(strLogCnt,NULL,10);
 		long int PhyTime = strtol(strPhyTime,NULL,10);
 		
-		//LC logic
-
+		// LC logic
 		SET_LC_TIME (messageTime->lc, LogClk)
 		SET_LC_COUNT (messageTime->lc, LogCnt)
 		SET_PC_TIME (messageTime->pc, PhyTime)
 
+        pthread_mutex_lock(g_lock_lc);
 		createRecvEvent (&newEvent, messageTime);
-
-		//LC logic ends
-//		pthread_mutex_lock(&offset_lock);
-//		nOffsets[i] = offset;
-//		printf("\nrecvd:%f", offset);
-//		pthread_mutex_unlock(&offset_lock);
-		
+        pthread_mutex_unlock(g_lock_lc);
+		// LC logic ends
 	}
 
 	freeATTime(messageTime);
@@ -68,101 +62,88 @@ void* Receiver(void* dummy)
 
 int main (int argc, char* argv[])
 {
-	ATEvent *newEvent = NULL;
-	ATTime *messageTime = NULL;
-	createATTime (&messageTime);
-	
-	if(argc < 3)
-	{	
-		printf("\nUSAGE: peer myID <peer1> [<peer2> .......]\n");
-		exit(1);
-	}
+    ATEvent *newEvent = NULL;
+    ATTime *messageTime = NULL;
 
-    	// initializations
-    	if (initATClock() != AT_SUCCESS)
-    	    return -1;
-    	if (initATEvent() != AT_SUCCESS)
-    	    return -1;
+    if(argc < 3)
+    {	
+        printf("\nUSAGE: peer myID <peer1> [<peer2> .......]\n");
+        exit(1);
+    }
 
+    // initializations
+    if (initATClock() != AT_SUCCESS)
+        return -1;
+    if (initATEvent() != AT_SUCCESS)
+        return -1;
 
-	//set current peer's ID in myID
-	sprintf(g_myID, "%s", argv[1]);
+    //set current peer's ID in myID
+    sprintf(g_myID, "%s", argv[1]);
 
-	//initialize the logical clock mutex
-	if (pthread_mutex_init(&g_lock_lc, NULL) != 0)
-	{
-		printf("\n mutex init failed\n");
-		return 1;
-	}
+    //initialize the logical clock mutex
+    if (pthread_mutex_init(&g_lock_lc, NULL) != 0)
+    {
+        printf("\n mutex init failed\n");
+        return 1;
+    }
 
+    //spawn the receiver
+    int err = pthread_create(&thread_id, NULL, &Receiver, (void*)NULL);
+    if (err != 0)
+    {
+        printf("\ncan't create thread :[%s]", strerror(err));
+        return 1;
+    }
 
-	//spawn the receiver
-	int err = pthread_create(&thread_id, NULL, &Receiver, (void*)NULL);
-	if (err != 0)
-           printf("\ncan't create thread :[%s]", strerror(err));
-	
-	int nPeers = argc - 2;
-	//void ** context = new void*[nPeers];
-	void ** responder = new void*[nPeers];
-	//int * rclist = new int[nPeers]; 
-	void *context = zmq_ctx_new ();
-	for(int i = 0; i< nPeers; i++)
-	{
-	}	
-	char peerIpPort[20];
+    int nPeers = argc - 2;
+    void **responder = new void*[nPeers];
+    void *context = zmq_ctx_new();
+    char peerIpPort[20];
 
-	//while(1)//Keep looping till we connect to all the peers. Will have to stick to this unclean approach till we can come up with a better idea
-	//{
-	//	bool bAllConnected = true;
-	for(int i = 2; i< argc; i++)
-	{
-		sprintf(peerIpPort, "tcp://%s", argv[i]);
-		printf("\nConnecting to %s\n", peerIpPort);
-		responder[i-2] = zmq_socket (context, ZMQ_REQ);
-		int rc = zmq_connect (responder[i-2], peerIpPort);
-		printf("%d\n", rc);
-		sleep(2);
-		if(rc==0)
-			printf("\nConnected to peer:%s\n", peerIpPort);
-		assert (rc == 0);
-	}
-//	sleep(2);
-	//	if(bAllConnected)
-	//		break;	//no one set it to false means all rc were 0;
-	//}
-	printf("\nConnected with all the peers\n");
+    for(int i = 2; i< argc; i++)
+    {
+        sprintf(peerIpPort, "tcp://%s", argv[i]);
+        printf("\nConnecting to %s\n", peerIpPort);
+        responder[i-2] = zmq_socket (context, ZMQ_REQ);
+        int rc = zmq_connect (responder[i-2], peerIpPort);
+        printf("%d\n", rc);
+        sleep(2);
+        if(rc==0)
+            printf("\nConnected to peer:%s\n", peerIpPort);
+        assert (rc == 0);
+    }
+    printf("\nConnected with all the peers\n");
 
-	//Send Logic starts
-	char message[300];
-	int sleepTime = 0;
-	while (1)
-	{
-		for (int i = 0; i < nPeers; i++)
-		{
-			getATTime(messageTime);
-			long int dummylc = rand() % 10;
-			sprintf(message, "%s:%ld:%ld:%ld", g_myID, /*GET_LC_TIME(messageTime->lc)*/ dummylc, GET_LC_COUNT(messageTime->lc), GET_PC_TIME(messageTime->pc));
-			printf("sending: %s\n", message);
-			zmq_send(responder[i], message, 300, 0);
-			char buffer[10];
-			zmq_recv(responder[i], buffer,5,0);
-			// copy messageTime to send buffer to send
+    //Send Logic starts
+    char message[300];
+    int sleepTime = 0;
+    while (1)
+    {
+        for (int i = 0; i < nPeers; i++)
+        {
+            pthread_mutex_lock(g_lock_lc);
 
-			createSendEvent (&newEvent);
-		}
+            createSendEvent (&newEvent);
+            messageTime = newEvent->atTime;
 
-		sleepTime = rand() % 5;
-		sleep(sleepTime);
+            sprintf(message, "%s:%ld:%ld:%ld", g_myID, GET_LC_TIME(messageTime->lc), GET_LC_COUNT(messageTime->lc), GET_PC_TIME(messageTime->pc));
+            printf("sending: %s\n", message);
+            zmq_send(responder[i], message, 300, 0);
+            char buffer[10];
+            zmq_recv(responder[i], buffer,5,0);
+            // copy messageTime to send buffer to send
 
-		dumpEvents((char*)"dump.log");
-	}
+            pthread_mutex_unlock(g_lock_lc);
+        }
 
-	    // uninitializations
-    	uninitATEvent();
-    	uninitATClock();
+        sleepTime = rand() % 5;
+        sleep(sleepTime);
+    }
 
+    // uninitializations
+    uninitATEvent();
+    uninitATClock();
 
-	freeATTime (messageTime);
-	//Send logic ends	
-return 0;
+    //Send logic ends	
+    return 0;
 }
