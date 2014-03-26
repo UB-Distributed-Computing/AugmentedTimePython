@@ -17,47 +17,47 @@ pthread_t thread_id;
 
 void* Receiver(void* dummy)
 {
-	void *context = zmq_ctx_new ();
-	void *responder = zmq_socket (context, ZMQ_REP);
-	int rc = zmq_bind (responder, "tcp://*:12345");
-	printf("%d", rc);
-	assert (rc == 0);
+    void *context = zmq_ctx_new ();
+    void *responder = zmq_socket (context, ZMQ_REP);
+    int rc = zmq_bind (responder, "tcp://*:12345");
+    printf("%d", rc);
+    assert (rc == 0);
 
-	ATEvent *newEvent = NULL;
-	ATTime *messageTime = NULL;
-	createATTime (&messageTime);	
+    ATEvent *newEvent = NULL;
+    ATTime *messageTime = NULL;
+    createATTime (&messageTime);    
 
-	int client;	
-	while (1) 
-	{
-		char buffer [300];
-		buffer[1] = '\0';
-		zmq_recv (responder, buffer, 300, 0);
-		printf("rcvd:%s\n", buffer);	
-		zmq_send (responder, "Worl", 5, 0);			
-		fflush(stdout);
-		char * chClient = strtok(buffer, ":");
-		char * strLogClk = strtok(NULL,":");
-		char * strLogCnt = strtok(NULL,":");
-		char * strPhyTime = strtok(NULL,":");
+    int client;    
+    while (1) 
+    {
+        char buffer [300];
+        buffer[1] = '\0';
+        zmq_recv (responder, buffer, 300, 0);
+        printf("rcvd:%s\n", buffer);    
+        zmq_send (responder, "Worl", 5, 0);            
+        fflush(stdout);
+        char * chClient = strtok(buffer, ":");
+        char * strLogClk = strtok(NULL,":");
+        char * strLogCnt = strtok(NULL,":");
+        char * strPhyTime = strtok(NULL,":");
 
-		client = atoi (chClient);
-		long int LogClk = strtol(strLogClk,NULL,10);
-		long int LogCnt = strtol(strLogCnt,NULL,10);
-		long int PhyTime = strtol(strPhyTime,NULL,10);
-		
-		// LC logic
-		SET_LC_TIME (messageTime->lc, LogClk)
-		SET_LC_COUNT (messageTime->lc, LogCnt)
-		SET_PC_TIME (messageTime->pc, PhyTime)
+        client = atoi (chClient);
+        long int LogClk = strtol(strLogClk,NULL,10);
+        long int LogCnt = strtol(strLogCnt,NULL,10);
+        long int PhyTime = strtol(strPhyTime,NULL,10);
+        
+        // LC logic
+        SET_LC_TIME (messageTime->lc, LogClk)
+        SET_LC_COUNT (messageTime->lc, LogCnt)
+        SET_PC_TIME (messageTime->pc, PhyTime)
 
         pthread_mutex_lock(g_lock_lc);
-		createRecvEvent (&newEvent, messageTime);
+        createRecvEvent (&newEvent, messageTime);
         pthread_mutex_unlock(g_lock_lc);
-		// LC logic ends
-	}
+        // LC logic ends
+    }
 
-	freeATTime(messageTime);
+    freeATTime(messageTime);
 }
 
 int main (int argc, char* argv[])
@@ -66,7 +66,7 @@ int main (int argc, char* argv[])
     ATTime *messageTime = NULL;
 
     if(argc < 3)
-    {	
+    {    
         printf("\nUSAGE: peer myID <peer1> [<peer2> .......]\n");
         exit(1);
     }
@@ -144,6 +144,6 @@ int main (int argc, char* argv[])
     uninitATEvent();
     uninitATClock();
 
-    //Send logic ends	
+    //Send logic ends    
     return 0;
 }
