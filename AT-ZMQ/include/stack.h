@@ -17,12 +17,14 @@ typedef struct atStack
     unsigned int count;
 }ATStack;
 
+typedef ATReturn (*EventWriter) (void *data, FILE *f);
+
 //declarations
 ATReturn createATStackNode (ATStackNode **ppNode, void *data);
 ATReturn freeATStackNode (ATStackNode *node);
 ATReturn createATStack (ATStack **ppS);
 ATReturn freeATStack (ATStack *pS);
-ATReturn ATStackPush (ATStack *s, void *data);
+ATReturn ATStackPush (ATStack *s, void *data, FILE *logFile, EventWriter eWriter);
 ATReturn ATStackPop (void **ppData, ATStack *s);
 ATReturn ATStackTop (void **ppData, ATStack *s);
 ATReturn ATStackCount (unsigned int *count, ATStack *s);

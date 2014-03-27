@@ -74,7 +74,7 @@ int main (int argc, char* argv[])
     // initializations
     if (initATClock() != AT_SUCCESS)
         return -1;
-    if (initATEvent() != AT_SUCCESS)
+    if (initATEvent("dump.log") != AT_SUCCESS)
         return -1;
 
     //set current peer's ID in myID

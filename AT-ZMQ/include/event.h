@@ -21,8 +21,7 @@ typedef struct atEvent
 }ATEvent;
 
 // declarations
-ATReturn dumpEvents (char *filename);
-ATReturn initATEvent ();
+ATReturn initATEvent (char *logFileName);
 ATReturn uninitATEvent ();
 ATReturn createEvent (ATEvent **ppEvent);
 ATReturn freeEvent (ATEvent *atEvent);

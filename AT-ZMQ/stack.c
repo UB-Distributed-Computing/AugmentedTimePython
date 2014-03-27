@@ -58,13 +58,39 @@ ATReturn freeATStack (ATStack *pS)
     return AT_SUCCESS;
 }
 
-ATReturn ATStackPush (ATStack *s, void *data)
-{
-    ATStackNode *node;
-    ATReturn errorCode = AT_SUCCESS;
+//ATReturn ATStackPush (ATStack *s, void *data, FILE *logFile)
+//{
+//    ATStackNode *node;
+//    ATReturn errorCode = AT_SUCCESS;
+//
+//    if (s == NULL || data == NULL)
+//        return AT_NULL_PARAM;
+//
+//    errorCode = createATStackNode (&node, data);
+//    if (errorCode != AT_SUCCESS)
+//        return errorCode;
+//
+//    node->next = s->head;
+//    s->head = node;
+//    s->count++;
+//
+//    return AT_SUCCESS;
+//}
 
-    if (s == NULL || data == NULL)
+ATReturn ATStackPush (ATStack *s, void *data, FILE *logFile, EventWriter eWriter)
+{
+    ATStackNode *node = NULL;
+    ATReturn errorCode = AT_SUCCESS;
+    void *topData = NULL;
+
+    if (s == NULL || data == NULL || logFile == NULL || eWriter == NULL)
         return AT_NULL_PARAM;
+
+    ATStackPop (&topData, s);
+    if (topData != NULL)
+    {
+        eWriter(topData, logFile);
+    }
 
     errorCode = createATStackNode (&node, data);
     if (errorCode != AT_SUCCESS)

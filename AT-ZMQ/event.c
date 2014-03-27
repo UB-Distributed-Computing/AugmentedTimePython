@@ -3,32 +3,19 @@
 
 // globals
 ATStack *eventStack = NULL;
+FILE *logFile = NULL;
 
-ATReturn dumpEvents (char *filename)
+ATReturn writeEvent (void *data, FILE *f)
 {
-    FILE *f = NULL;
-    ATStackNode *stackNode = NULL;
     ATEvent *atEvent = NULL;
 
-    if (filename == NULL)
+    if (data == NULL || f == NULL)
         return AT_NULL_PARAM;
 
-    f = fopen(filename, "w");
-    if (f == NULL)
-        return AT_FAIL;
-
-    if (eventStack == NULL)
+    atEvent = (ATEvent*)(data);
+    fprintf (f, "\n");
+    switch (atEvent->eventType)
     {
-        fclose(f);
-        return AT_SUCCESS;
-    }
-
-    for (stackNode = eventStack->head; stackNode != NULL; stackNode = stackNode->next)
-    {
-        atEvent = (ATEvent*)(stackNode->data);
-        fprintf (f, "\n");
-        switch (atEvent->eventType)
-        {
         case AT_RECV_EVENT:
             fprintf (f, "Event Type: Receive\n");
             break;
@@ -41,24 +28,36 @@ ATReturn dumpEvents (char *filename)
         default:
             fprintf (f, "Event Type: Unknown\n");
             break;
-        }
-        fprintf (f, "Time: logical = %llu, count = %llu, physical = %llu\n",(long long unsigned) GET_LC_TIME(atEvent->atTime->lc), 
-          (long long unsigned)GET_LC_COUNT(atEvent->atTime->lc),(long long unsigned)GET_PC_TIME(atEvent->atTime->pc));
-        fprintf (f, "\n");
     }
+    fprintf (f, "Time: logical = %llu, count = %llu, physical = %llu\n",(long long unsigned) GET_LC_TIME(atEvent->atTime->lc),
+            (long long unsigned)GET_LC_COUNT(atEvent->atTime->lc),(long long unsigned)GET_PC_TIME(atEvent->atTime->pc));
+    fprintf (f, "\n");
 
-    fclose(f);
+    freeEvent (atEvent);
+
     return AT_SUCCESS;
 }
 
-ATReturn initATEvent ()
+ATReturn initATEvent (char *logFileName)
 {
-    if (eventStack != NULL)
+    if (eventStack != NULL || logFile != NULL)
         return AT_ALREADY_INITIALIZED;
+
+    if (logFileName == NULL)
+        return AT_NULL_PARAM;
 
     createATStack (&eventStack);
     if (eventStack == NULL)
         return AT_FAIL;
+
+    logFile = fopen(logFileName, "a");
+    if (logFile == NULL)
+    {
+        freeATStack (eventStack);
+        eventStack = NULL;
+
+        return AT_FAIL;
+    }
 
     return AT_SUCCESS;
 }
@@ -82,6 +81,12 @@ ATReturn uninitATEvent ()
 
     freeATStack (eventStack);
     eventStack = NULL;
+
+    if (logFile != NULL)
+    {
+        fclose(logFile);
+        logFile = NULL;
+    }
 
     return AT_SUCCESS;
 }
@@ -154,7 +159,7 @@ ATReturn createSendEvent (ATEvent **ppEvent)
     SET_LC_COUNT (sendEvent->atTime->lc, eventLogicalCount)
     SET_PC_TIME (sendEvent->atTime->pc, GET_PC_TIME(currentTime->pc))
 
-    ATStackPush (eventStack, sendEvent);
+    ATStackPush (eventStack, sendEvent, logFile, &writeEvent);
 
     setLCTime (eventLogicalCount);
     setLCCount (eventLogicalCount);
@@ -250,7 +255,7 @@ ATReturn createRecvEvent (ATEvent **ppEvent, ATTime *messageTime)
         setLCCount (eventLogicalCount);
     }
 
-    ATStackPush (eventStack, recvEvent);
+    ATStackPush (eventStack, recvEvent, logFile, &writeEvent);
 
     *ppEvent = recvEvent;
     freeATTime (lastEventTime);
