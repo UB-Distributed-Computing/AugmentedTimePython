@@ -34,4 +34,6 @@ rm -rf ~/projects
 mkdir -p ~/projects
 cd ~/projects
 git clone https://github.com/UB-Distributed-Computing/AugmentedTimePython.git
+cd AugmentedTimePython
+make
 cd $curpath
