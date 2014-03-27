@@ -64,6 +64,7 @@ int main (int argc, char* argv[])
 {
     ATEvent *newEvent = NULL;
     ATTime *messageTime = NULL;
+    char *filename = (char *)"dump.log";
 
     if(argc < 3)
     {    
@@ -74,7 +75,7 @@ int main (int argc, char* argv[])
     // initializations
     if (initATClock() != AT_SUCCESS)
         return -1;
-    if (initATEvent("dump.log") != AT_SUCCESS)
+    if (initATEvent(filename) != AT_SUCCESS)
         return -1;
 
     //set current peer's ID in myID
