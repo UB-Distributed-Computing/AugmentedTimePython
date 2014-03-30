@@ -15,6 +15,45 @@ pthread_mutex_t g_lock_lc;
 unsigned long g_lc;
 pthread_t thread_id;
 
+char* GetOffset()
+{
+	FILE *fp;
+  int status;
+  char path[1035];
+	char *ret = (char*)malloc(40);
+
+  /* Open the command for reading. */
+  fp = popen("ntpdc -cloopinfo | grep offset", "r");
+  if (fp == NULL) {
+    printf("Failed to run command\n" );
+    exit(1);
+  }
+
+  FILE* fp1 = popen("ntpdc -ckerninfo | grep offset", "r");
+  if (fp1 == NULL) {
+    printf("Failed to run command\n" );
+    exit(1);
+  }
+  
+  char path1[1035];
+  fgets(path1, sizeof(path)-1, fp1);
+ strtok(path1, ":");
+        char *plloffsets = strtok(NULL, ":");
+        char *plloffset = strtok(plloffsets, " ");
+  /* Read the output a line at a time - output it. */
+  while (fgets(path, sizeof(path)-1, fp) != NULL) {
+	strtok(path, ":");    
+	char *offsets = strtok(NULL, ":");
+	char *offset = strtok(offsets, " ");
+        sprintf(ret, "%s|%s", offset,plloffset);
+  }
+
+  /* close */
+  pclose(fp);
+  pclose(fp1);
+	return ret;
+}
+
 void* Receiver(void* dummy)
 {
     void *context = zmq_ctx_new ();
@@ -126,8 +165,9 @@ int main (int argc, char* argv[])
 
             createSendEvent (&newEvent);
             messageTime = newEvent->atTime;
-
-            sprintf(message, "%s:%ld:%ld:%ld", g_myID, GET_LC_TIME(messageTime->lc), GET_LC_COUNT(messageTime->lc), GET_PC_TIME(messageTime->pc));
+	    char *offset = GetOffset();
+            sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, GET_LC_TIME(messageTime->lc), GET_LC_COUNT(messageTime->lc), GET_PC_TIME(messageTime->pc),offset);
+	    free(offset);
             printf("sending: %s\n", message);
             zmq_send(responder[i], message, 300, 0);
             char buffer[10];
