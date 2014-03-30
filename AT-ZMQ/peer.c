@@ -169,7 +169,7 @@ int main (int argc, char* argv[])
 	    char *offset = GetOffset();
             sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, GET_LC_TIME(messageTime->lc), GET_LC_COUNT(messageTime->lc), GET_PC_TIME(messageTime->pc),offset);
 	    free(offset);
-            printf("sending: %s\n", message);
+            printf("sent: %s\n", message);
             zmq_send(responder[i], message, 300, 0);
             char buffer[10];
             zmq_recv(responder[i], buffer,5,0);
