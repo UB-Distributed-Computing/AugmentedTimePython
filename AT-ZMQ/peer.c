@@ -177,8 +177,8 @@ int main (int argc, char* argv[])
 
         }
 
-        sleepTime = rand() % 5;
-        sleep(sleepTime);
+        //sleepTime = rand() % 5;
+        //sleep(sleepTime);
     }
 
     // uninitializations
