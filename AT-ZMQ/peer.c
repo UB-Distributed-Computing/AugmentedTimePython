@@ -164,6 +164,7 @@ int main (int argc, char* argv[])
             pthread_mutex_lock(&g_lock_lc);
 
             createSendEvent (&newEvent);
+            pthread_mutex_unlock(&g_lock_lc);
             messageTime = newEvent->atTime;
 	    char *offset = GetOffset();
             sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, GET_LC_TIME(messageTime->lc), GET_LC_COUNT(messageTime->lc), GET_PC_TIME(messageTime->pc),offset);
@@ -174,7 +175,6 @@ int main (int argc, char* argv[])
             zmq_recv(responder[i], buffer,5,0);
             // copy messageTime to send buffer to send
 
-            pthread_mutex_unlock(&g_lock_lc);
         }
 
         sleepTime = rand() % 5;
