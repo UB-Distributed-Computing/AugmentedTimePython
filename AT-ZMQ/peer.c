@@ -18,7 +18,7 @@ FILE *g_logfile = NULL;
 
 char* GetOffset();
 
-int64_t getCurrentPhysicalTime()
+__uint64_t getCurrentPhysicalTime()
 {
     struct timeval tv;
 
@@ -31,9 +31,9 @@ int64_t getCurrentPhysicalTime()
 class ATTime
 {
     public:
-    int64_t mLogicalTime;
-    int64_t mLogicalCount;
-    int64_t mPhysicalTime;
+    __uint64_t mLogicalTime;
+    __uint64_t mLogicalCount;
+    __uint64_t mPhysicalTime;
 
     ATTime()
     {
@@ -43,7 +43,7 @@ class ATTime
     }
 
     void createSendEvent(); 
-    void createRecvEvent(int64_t msgLogicalTime, int64_t msgLogicalCount, int64_t msgPhysicalTime, char *recvString);
+    void createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString);
     void copyClock(ATTime *src);
 };
 
@@ -58,11 +58,11 @@ void writeState(FILE *fp, int type, char *recvString = NULL)
     {
         case 0: // send event
             fprintf (fp, "Send:");
-            fprintf (fp, "%llu:%llu:%llu:%s\n", g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            fprintf (fp, "%lu:%lu:%lu:%s\n", g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
             break;
         case 1: // recv event
             fprintf (fp, "Recv:");
-            fprintf (fp, "%llu:%llu:%llu", g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
+            fprintf (fp, "%lu:%lu:%lu", g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             fprintf (fp, ":%s:%s\n", recvString, offset);
             break;
 
@@ -101,7 +101,7 @@ void ATTime::createSendEvent()
     delete f;
 }
 
-void ATTime::createRecvEvent(int64_t msgLogicalTime, int64_t msgLogicalCount, int64_t msgPhysicalTime, char *recvString)
+void ATTime::createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString)
 {
     ATTime *e = &g_attime;
     ATTime *f = new ATTime(); // f physical time is up-to-date
@@ -193,9 +193,9 @@ void* Receiver(void* dummy)
         char * strPhyTime = strtok(NULL,":");
 
         client = atoi (chClient);
-        int64_t LogClk = strtol(strLogClk,NULL,10);
-        int64_t LogCnt = strtol(strLogCnt,NULL,10);
-        int64_t PhyTime = strtol(strPhyTime,NULL,10);
+        __uint64_t LogClk = strtol(strLogClk,NULL,10);
+        __uint64_t LogCnt = strtol(strLogCnt,NULL,10);
+        __uint64_t PhyTime = strtol(strPhyTime,NULL,10);
 
         pthread_mutex_lock(&g_lock_lc);
         g_attime.createRecvEvent(LogClk, LogCnt, PhyTime, buffer);
