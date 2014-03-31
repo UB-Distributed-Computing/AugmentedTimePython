@@ -184,7 +184,6 @@ void* Receiver(void* dummy)
         char buffer [300];
         buffer[1] = '\0';
         zmq_recv (responder, buffer, 300, 0);
-        printf("rcvd:%s\n", buffer);    
         zmq_send (responder, "Worl", 5, 0);            
         fflush(stdout);
         char * chClient = strtok(buffer, ":");
