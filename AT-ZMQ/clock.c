@@ -13,13 +13,22 @@ ATTime *atc = NULL;
 ATReturn getLCTime (at_time *time)
 {
     if (time == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     if (atc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NOT_INITIALIZED;
+    }
 
     if (atc->lc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     *time = atc->lc->time;
 
@@ -29,13 +38,22 @@ ATReturn getLCTime (at_time *time)
 ATReturn getLCCount (at_time *count)
 {
     if (count == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     if (atc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NOT_INITIALIZED;
+    }
 
     if (atc->lc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     *count = atc->lc->count;
 
@@ -49,17 +67,29 @@ ATReturn getPCTime (at_time *time)
 #endif /* OS_WIN */
 
     if (time == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     if (atc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NOT_INITIALIZED;
+    }
 
     if (atc->pc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
 #ifndef OS_WIN
     if (gettimeofday(&tv, NULL) != 0)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     atc->pc->time = tv.tv_sec * 1000000 + tv.tv_usec;
 #else /* OS_WIN */
@@ -76,21 +106,36 @@ ATReturn getATTime (ATTime *time)
     ATReturn retVal = AT_SUCCESS;
 
     if (time == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
     if (time->lc == NULL || time->pc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     retVal = getLCTime (&(time->lc->time));
     if (retVal != AT_SUCCESS)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return retVal;
+    }
 
     retVal = getLCCount (&(time->lc->count));
     if (retVal != AT_SUCCESS)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return retVal;
+    }
 
     retVal = getPCTime (&(time->pc->time));
     if (retVal != AT_SUCCESS)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return retVal;
+    }
 
     return AT_SUCCESS;
 }
@@ -98,10 +143,16 @@ ATReturn getATTime (ATTime *time)
 ATReturn setLCTime (at_time time)
 {
     if (atc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NOT_INITIALIZED;
+    }
 
     if (atc->lc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     atc->lc->time = time;
 
@@ -111,10 +162,16 @@ ATReturn setLCTime (at_time time)
 ATReturn setLCCount (at_time count)
 {
     if (atc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NOT_INITIALIZED;
+    }
 
     if (atc->lc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     atc->lc->count = count;
 
@@ -124,10 +181,16 @@ ATReturn setLCCount (at_time count)
 ATReturn setPCTime (at_time time)
 {
     if (atc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NOT_INITIALIZED;
+    }
 
     if (atc->pc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     atc->pc->time = time;
 
@@ -141,16 +204,30 @@ ATReturn resetPC ()
 #endif /* OS_WIN */
 
     if (atc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NOT_INITIALIZED;
+    }
 
     if (atc->pc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
 #ifndef OS_WIN
     if (gettimeofday(&tv, NULL) != 0)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     atc->pc->time = tv.tv_sec * 1000000 + tv.tv_usec;
+    if (atc->pc->time <= 0)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
+        return AT_FAIL;
+    }
 #else /* OS_WIN */
     atc->pc->time = GetTickCount64();
 #endif /* OS_WIN */
@@ -161,10 +238,16 @@ ATReturn resetPC ()
 ATReturn resetLC ()
 {
     if (atc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NOT_INITIALIZED;
+    }
 
     if (atc->lc == NULL || atc->pc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     atc->lc->time = atc->pc->time;
     atc->lc->count = 0;
@@ -177,16 +260,23 @@ ATReturn createATTime (ATTime **ppATTime)
     ATTime *pTime = NULL;
 
     if (ppATTime == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     pTime = (ATTime*)malloc(sizeof(ATTime));
     if (pTime == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_LOW_MEMORY;
+    }
 
     pTime->lc = (LogicalTime*)malloc(sizeof(LogicalTime));
     if (pTime->lc == NULL)
     {
         free (pTime);
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_LOW_MEMORY;
     }
 
@@ -196,6 +286,7 @@ ATReturn createATTime (ATTime **ppATTime)
         free (pTime->lc);
         free (pTime);
 
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_LOW_MEMORY;
     }
 
@@ -207,10 +298,16 @@ ATReturn createATTime (ATTime **ppATTime)
 ATReturn freeATTime (ATTime *pTime)
 {
     if (pTime == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     if (pTime->lc == NULL || pTime->pc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     free (pTime->lc);
     free (pTime->pc);
@@ -222,11 +319,17 @@ ATReturn freeATTime (ATTime *pTime)
 ATReturn initATClock ()
 {
     if (atc != NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_ALREADY_INITIALIZED;
+    }
 
     atc = (ATTime*)malloc(sizeof(ATTime));
     if (atc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_LOW_MEMORY;
+    }
 
     atc->lc = (LogicalTime*)malloc(sizeof(LogicalTime));
     if (atc->lc == NULL)
@@ -234,6 +337,7 @@ ATReturn initATClock ()
         free (atc);
         atc = NULL;
 
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_LOW_MEMORY;
     }
 
@@ -244,6 +348,7 @@ ATReturn initATClock ()
         free (atc);
         atc = NULL;
 
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_LOW_MEMORY;
     }
 
@@ -256,7 +361,10 @@ ATReturn initATClock ()
 ATReturn uninitATClock ()
 {
     if (atc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NOT_INITIALIZED;
+    }
 
     if (atc->pc != NULL)
         free (atc->pc);

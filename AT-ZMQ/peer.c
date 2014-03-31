@@ -84,6 +84,11 @@ void* Receiver(void* dummy)
         long int LogClk = strtol(strLogClk,NULL,10);
         long int LogCnt = strtol(strLogCnt,NULL,10);
         long int PhyTime = strtol(strPhyTime,NULL,10);
+
+        if (LogClk <= 0 || LogCnt <= 0 || PhyTime <= 0)
+        {
+            AT_LOG ("ERROR: %s:%d LogClk:%ld LogCnt:%ld PhyTime:%ld\n", __func__, __LINE__, LogClk, LogCnt, PhyTime);
+        }
         
         // LC logic
         SET_LC_TIME (messageTime->lc, LogClk)
@@ -113,9 +118,15 @@ int main (int argc, char* argv[])
 
     // initializations
     if (initATClock() != AT_SUCCESS)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return -1;
+    }
     if (initATEvent(filename) != AT_SUCCESS)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return -1;
+    }
 
     //set current peer's ID in myID
     sprintf(g_myID, "%s", argv[1]);
@@ -124,6 +135,7 @@ int main (int argc, char* argv[])
     if (pthread_mutex_init(&g_lock_lc, NULL) != 0)
     {
         printf("\n mutex init failed\n");
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return 1;
     }
 
@@ -132,6 +144,7 @@ int main (int argc, char* argv[])
     if (err != 0)
     {
         printf("\ncan't create thread :[%s]", strerror(err));
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return 1;
     }
 
@@ -149,7 +162,10 @@ int main (int argc, char* argv[])
         printf("%d\n", rc);
         sleep(2);
         if(rc==0)
+        {
+            AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
             printf("\nConnected to peer:%s\n", peerIpPort);
+        }
         assert (rc == 0);
     }
     printf("\nConnected with all the peers\n");
@@ -167,6 +183,14 @@ int main (int argc, char* argv[])
             pthread_mutex_unlock(&g_lock_lc);
             messageTime = newEvent->atTime;
 	    char *offset = GetOffset();
+            if (GET_LC_TIME(messageTime->lc) <= 0)
+            {
+                AT_LOG ("ERROR: %s:%d   lc val: %ld\n", __func__, __LINE__, GET_LC_TIME(messageTime->lc));
+            }
+            if (GET_PC_TIME(messageTime->pc) <= 0)
+            {
+                AT_LOG ("ERROR: %s:%d   pc val: %ld\n", __func__, __LINE__, GET_PC_TIME(messageTime->pc));
+            }
             sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, GET_LC_TIME(messageTime->lc), GET_LC_COUNT(messageTime->lc), GET_PC_TIME(messageTime->pc),offset);
 	    free(offset);
             printf("sent: %s\n", message);

@@ -10,7 +10,10 @@ ATReturn writeEvent (void *data, FILE *f)
     ATEvent *atEvent = NULL;
 
     if (data == NULL || f == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     atEvent = (ATEvent*)(data);
     fprintf (f, "\n");
@@ -26,6 +29,7 @@ ATReturn writeEvent (void *data, FILE *f)
             fprintf (f, "Event Type: Local\n");
             break;
         default:
+            AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
             fprintf (f, "Event Type: Unknown\n");
             break;
     }
@@ -41,14 +45,23 @@ ATReturn writeEvent (void *data, FILE *f)
 ATReturn initATEvent (char *logFileName)
 {
     if (eventStack != NULL || logFile != NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_ALREADY_INITIALIZED;
+    }
 
     if (logFileName == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     createATStack (&eventStack);
     if (eventStack == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     logFile = fopen(logFileName, "a");
     if (logFile == NULL)
@@ -56,6 +69,7 @@ ATReturn initATEvent (char *logFileName)
         freeATStack (eventStack);
         eventStack = NULL;
 
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
     }
 
@@ -67,7 +81,10 @@ ATReturn uninitATEvent ()
     ATEvent *atEvent = NULL;
 
     if (eventStack == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NOT_INITIALIZED;
+    }
 
     while (1)
     {
@@ -97,11 +114,15 @@ ATReturn createEvent (ATEvent **ppEvent)
 
     atEvent = (ATEvent*)malloc(sizeof(ATEvent));
     if (atEvent == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_LOW_MEMORY;
+    }
 
     if (createATTime(&(atEvent->atTime)) != AT_SUCCESS)
     {
         freeATTime (atEvent->atTime);
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
     }
 
@@ -120,6 +141,9 @@ ATReturn freeEvent (ATEvent *atEvent)
         free (atEvent);
     }
 
+    if (retVal != AT_SUCCESS)
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
+
     return retVal;
 }
 
@@ -130,20 +154,28 @@ ATReturn createSendEvent (ATEvent **ppEvent)
     ATTime *currentTime = NULL;
 
     if (ppEvent == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     if (createATTime(&currentTime) != AT_SUCCESS)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     if (createEvent(&sendEvent) != AT_SUCCESS)
     {
         freeATTime (currentTime);
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
     }
 
     if (getATTime(currentTime) != AT_SUCCESS)
     {
         freeATTime (currentTime);
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
     }
 
@@ -178,23 +210,34 @@ ATReturn createRecvEvent (ATEvent **ppEvent, ATTime *messageTime)
     void *top = NULL;
 
     if (ppEvent == NULL || messageTime == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     if (messageTime->lc == NULL || messageTime->pc == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     if (createATTime(&lastEventTime) != AT_SUCCESS)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
+    }
 
     if (createATTime(&currentTime) != AT_SUCCESS)
     {
         freeATTime (lastEventTime);
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
     }
 
     if (ATStackTop(&top, eventStack) != AT_SUCCESS)
     {
         freeATTime (lastEventTime);
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
     }
 
@@ -213,6 +256,7 @@ ATReturn createRecvEvent (ATEvent **ppEvent, ATTime *messageTime)
         freeATTime(currentTime);
         freeATTime(lastEventTime);
 
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
     }
 
@@ -221,6 +265,7 @@ ATReturn createRecvEvent (ATEvent **ppEvent, ATTime *messageTime)
         freeATTime(currentTime);
         freeATTime(lastEventTime);
 
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_FAIL;
     }
 

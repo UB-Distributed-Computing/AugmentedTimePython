@@ -7,12 +7,18 @@ ATReturn createATStackNode (ATStackNode **ppNode, void *data)
     ATStackNode *newNode;
 
     if (ppNode == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     newNode = (ATStackNode*)malloc(sizeof(ATStackNode));
 
     if (newNode == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_LOW_MEMORY;
+    }
 
     newNode->data = data;
     newNode->next = NULL;
@@ -34,12 +40,18 @@ ATReturn createATStack (ATStack **ppS)
     ATStack *newStack;
 
     if (ppS == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     newStack = (ATStack*)malloc(sizeof(ATStack));
 
     if (newStack == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_LOW_MEMORY;
+    }
 
     newStack->head = NULL;
     newStack->count = 0;
@@ -51,7 +63,10 @@ ATReturn createATStack (ATStack **ppS)
 ATReturn freeATStack (ATStack *pS)
 {
     if (pS == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     free (pS);
 
@@ -84,7 +99,10 @@ ATReturn ATStackPush (ATStack *s, void *data, FILE *logFile, EventWriter eWriter
     void *topData = NULL;
 
     if (s == NULL || data == NULL || logFile == NULL || eWriter == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     ATStackPop (&topData, s);
     if (topData != NULL)
@@ -94,7 +112,10 @@ ATReturn ATStackPush (ATStack *s, void *data, FILE *logFile, EventWriter eWriter
 
     errorCode = createATStackNode (&node, data);
     if (errorCode != AT_SUCCESS)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return errorCode;
+    }
 
     node->next = s->head;
     s->head = node;
@@ -109,7 +130,10 @@ ATReturn ATStackPop (void **ppData, ATStack *s)
     ATReturn errorCode = AT_SUCCESS;
 
     if (ppData == NULL || s == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     if (s->head == NULL)
     {
@@ -124,13 +148,19 @@ ATReturn ATStackPop (void **ppData, ATStack *s)
         s->count--;
     }
 
+    if (errorCode != AT_SUCCESS)
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
+
     return errorCode;
 }
 
 ATReturn ATStackTop (void **ppData, ATStack *s)
 {
     if (ppData == NULL || s == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     if (s->head == NULL)
         *ppData = NULL;
@@ -143,7 +173,10 @@ ATReturn ATStackTop (void **ppData, ATStack *s)
 ATReturn ATStackCount (unsigned int *count, ATStack *s)
 {
     if (s == NULL || count == NULL)
+    {
+        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return AT_NULL_PARAM;
+    }
 
     *count = s->count;
 
