@@ -6,14 +6,130 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <memory.h>
-#include "common.h"
-#include "event.h"
-#include "clock.h"
+#include <sys/time.h>
+#include <algorithm>
 
 char g_myID[3];
 pthread_mutex_t g_lock_lc;
 unsigned long g_lc;
 pthread_t thread_id;
+
+FILE *g_logfile = NULL;
+
+char* GetOffset();
+
+int64_t getCurrentPhysicalTime()
+{
+    struct timeval tv;
+
+    if (gettimeofday(&tv, NULL) != 0)
+        assert(!"gettimeofday failed!");
+
+    return tv.tv_sec * 1000000 + tv.tv_usec;
+}
+
+class ATTime
+{
+    public:
+    int64_t mLogicalTime;
+    int64_t mLogicalCount;
+    int64_t mPhysicalTime;
+
+    ATTime()
+    {
+        mLogicalTime = 0;
+        mLogicalCount = 0;
+        mPhysicalTime = getCurrentPhysicalTime();
+    }
+
+    void createSendEvent(); 
+    void createRecvEvent(int64_t msgLogicalTime, int64_t msgLogicalCount, int64_t msgPhysicalTime, char *recvString);
+    void copyClock(ATTime *src);
+};
+
+// global time
+ATTime g_attime;
+
+void writeState(FILE *fp, int type, char *recvString = NULL)
+{
+    char *offset = GetOffset();
+
+    switch(type)
+    {
+        case 0: // send event
+            fprintf (fp, "Send:");
+            fprintf (fp, "%llu:%llu:%llu:%s\n", g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            break;
+        case 1: // recv event
+            fprintf (fp, "Recv:");
+            fprintf (fp, "%llu:%llu:%llu", g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
+            fprintf (fp, ":%s:%s\n", recvString, offset);
+            break;
+
+        default:
+            break;
+    }
+
+    free(offset);
+}
+
+void ATTime::copyClock(ATTime *src)
+{
+    mLogicalTime = src->mLogicalTime;
+    mLogicalCount = src->mLogicalCount;
+    mPhysicalTime = src->mPhysicalTime;
+}
+
+void ATTime::createSendEvent()
+{
+    ATTime *e = &g_attime;
+    ATTime *f = new ATTime();
+
+    f->mLogicalTime = std::max(e->mLogicalTime, getCurrentPhysicalTime());
+    if (f->mLogicalTime == e->mLogicalTime)
+    {
+        f->mLogicalCount = e->mLogicalCount + 1;
+    }
+    else
+    {
+        f->mLogicalCount = 0;
+    }
+
+    g_attime.copyClock(f);
+    writeState(g_logfile, 0);
+    
+    delete f;
+}
+
+void ATTime::createRecvEvent(int64_t msgLogicalTime, int64_t msgLogicalCount, int64_t msgPhysicalTime, char *recvString)
+{
+    ATTime *e = &g_attime;
+    ATTime *f = new ATTime(); // f physical time is up-to-date
+
+    f->mLogicalTime = std::max(e->mLogicalTime, std::max(msgLogicalTime, f->mPhysicalTime));
+
+    if ((f->mLogicalTime == e->mLogicalTime) && (f->mLogicalTime == msgLogicalTime))
+    {
+        f->mLogicalCount = std::max(e->mLogicalCount, msgLogicalCount) + 1;
+    }
+    else if (f->mLogicalTime == e->mLogicalTime)
+    {
+        f->mLogicalCount = e->mLogicalCount + 1;
+    }
+    else if (f->mLogicalTime == msgLogicalTime)
+    {
+        f->mLogicalCount = msgLogicalCount + 1;
+    }
+    else
+    {
+        f->mLogicalCount = 0;
+    }
+
+    g_attime.copyClock(f);
+    writeState(g_logfile, 1, recvString);
+
+    delete f;
+}
 
 char* GetOffset()
 {
@@ -62,10 +178,6 @@ void* Receiver(void* dummy)
     printf("%d", rc);
     assert (rc == 0);
 
-    ATEvent *newEvent = NULL;
-    ATTime *messageTime = NULL;
-    createATTime (&messageTime);    
-
     int client;    
     while (1) 
     {
@@ -81,33 +193,18 @@ void* Receiver(void* dummy)
         char * strPhyTime = strtok(NULL,":");
 
         client = atoi (chClient);
-        long int LogClk = strtol(strLogClk,NULL,10);
-        long int LogCnt = strtol(strLogCnt,NULL,10);
-        long int PhyTime = strtol(strPhyTime,NULL,10);
-
-        if (LogClk <= 0 || LogCnt <= 0 || PhyTime <= 0)
-        {
-            AT_LOG ("ERROR: %s:%d LogClk:%ld LogCnt:%ld PhyTime:%ld\n", __func__, __LINE__, LogClk, LogCnt, PhyTime);
-        }
-        
-        // LC logic
-        SET_LC_TIME (messageTime->lc, LogClk)
-        SET_LC_COUNT (messageTime->lc, LogCnt)
-        SET_PC_TIME (messageTime->pc, PhyTime)
+        int64_t LogClk = strtol(strLogClk,NULL,10);
+        int64_t LogCnt = strtol(strLogCnt,NULL,10);
+        int64_t PhyTime = strtol(strPhyTime,NULL,10);
 
         pthread_mutex_lock(&g_lock_lc);
-        createRecvEvent (&newEvent, messageTime);
+        g_attime.createRecvEvent(LogClk, LogCnt, PhyTime, buffer);
         pthread_mutex_unlock(&g_lock_lc);
-        // LC logic ends
     }
-
-    freeATTime(messageTime);
 }
 
 int main (int argc, char* argv[])
 {
-    ATEvent *newEvent = NULL;
-    ATTime *messageTime = NULL;
     char *filename = (char *)"dump.log";
 
     if(argc < 3)
@@ -116,17 +213,8 @@ int main (int argc, char* argv[])
         exit(1);
     }
 
-    // initializations
-    if (initATClock() != AT_SUCCESS)
-    {
-        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
-        return -1;
-    }
-    if (initATEvent(filename) != AT_SUCCESS)
-    {
-        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
-        return -1;
-    }
+    g_logfile = fopen("events.log", "a");
+    assert (g_logfile != NULL);
 
     //set current peer's ID in myID
     sprintf(g_myID, "%s", argv[1]);
@@ -135,7 +223,6 @@ int main (int argc, char* argv[])
     if (pthread_mutex_init(&g_lock_lc, NULL) != 0)
     {
         printf("\n mutex init failed\n");
-        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return 1;
     }
 
@@ -144,7 +231,6 @@ int main (int argc, char* argv[])
     if (err != 0)
     {
         printf("\ncan't create thread :[%s]", strerror(err));
-        AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
         return 1;
     }
 
@@ -163,7 +249,6 @@ int main (int argc, char* argv[])
         sleep(2);
         if(rc==0)
         {
-            AT_LOG ("ERROR: %s:%d\n", __func__, __LINE__);
             printf("\nConnected to peer:%s\n", peerIpPort);
         }
         assert (rc == 0);
@@ -178,37 +263,20 @@ int main (int argc, char* argv[])
         for (int i = 0; i < nPeers; i++)
         {
             pthread_mutex_lock(&g_lock_lc);
-
-            createSendEvent (&newEvent);
+            g_attime.createSendEvent();
+            char *offset = GetOffset();
+            sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            free(offset);
             pthread_mutex_unlock(&g_lock_lc);
-            messageTime = newEvent->atTime;
-	    char *offset = GetOffset();
-            if (GET_LC_TIME(messageTime->lc) <= 0)
-            {
-                AT_LOG ("ERROR: %s:%d   lc val: %ld\n", __func__, __LINE__, GET_LC_TIME(messageTime->lc));
-            }
-            if (GET_PC_TIME(messageTime->pc) <= 0)
-            {
-                AT_LOG ("ERROR: %s:%d   pc val: %ld\n", __func__, __LINE__, GET_PC_TIME(messageTime->pc));
-            }
-            sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, GET_LC_TIME(messageTime->lc), GET_LC_COUNT(messageTime->lc), GET_PC_TIME(messageTime->pc),offset);
-	    free(offset);
-            printf("sent: %s\n", message);
+
             zmq_send(responder[i], message, 300, 0);
             char buffer[10];
             zmq_recv(responder[i], buffer,5,0);
-            // copy messageTime to send buffer to send
-
         }
 
         //sleepTime = rand() % 5;
         //sleep(sleepTime);
     }
 
-    // uninitializations
-    uninitATEvent();
-    uninitATClock();
-
-    //Send logic ends    
     return 0;
 }
