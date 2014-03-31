@@ -213,7 +213,7 @@ int main (int argc, char* argv[])
         exit(1);
     }
 
-    g_logfile = fopen("events.log", "a");
+    g_logfile = fopen("events.log", "w");
     assert (g_logfile != NULL);
 
     //set current peer's ID in myID
