@@ -8,6 +8,7 @@
 #include <memory.h>
 #include <sys/time.h>
 #include <algorithm>
+#include <string.h>
 
 char g_myID[3];
 pthread_mutex_t g_lock_lc;
@@ -58,11 +59,11 @@ void writeState(FILE *fp, int type, char *recvString = NULL)
     {
         case 0: // send event
             fprintf (fp, "Send:");
-            fprintf (fp, "%lu:%lu:%lu:%s\n", g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            fprintf (fp, "%s:%lu:%lu:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
             break;
         case 1: // recv event
             fprintf (fp, "Recv:");
-            fprintf (fp, "%lu:%lu:%lu", g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
+            fprintf (fp, "%s:%lu:%lu:%lu",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             fprintf (fp, ":%s:%s\n", recvString, offset);
             break;
 
@@ -182,11 +183,12 @@ void* Receiver(void* dummy)
     while (1) 
     {
         char buffer [300];
+	char buffercopy[300];
         buffer[1] = '\0';
         zmq_recv (responder, buffer, 300, 0);
         zmq_send (responder, "Worl", 5, 0);            
-        fflush(stdout);
-        char * chClient = strtok(buffer, ":");
+        strcpy(buffercopy, buffer);
+	char * chClient = strtok(buffer, ":");
         char * strLogClk = strtok(NULL,":");
         char * strLogCnt = strtok(NULL,":");
         char * strPhyTime = strtok(NULL,":");
@@ -197,7 +199,7 @@ void* Receiver(void* dummy)
         __uint64_t PhyTime = strtol(strPhyTime,NULL,10);
 
         pthread_mutex_lock(&g_lock_lc);
-        g_attime.createRecvEvent(LogClk, LogCnt, PhyTime, buffer);
+        g_attime.createRecvEvent(LogClk, LogCnt, PhyTime, buffercopy);
         pthread_mutex_unlock(&g_lock_lc);
     }
 }
