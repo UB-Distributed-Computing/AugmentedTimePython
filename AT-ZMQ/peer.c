@@ -64,7 +64,7 @@ void writeState(FILE *fp, int type, char *recvString = NULL)
         case 1: // recv event
             fprintf (fp, "Recv:");
             fprintf (fp, "%s:%lu:%lu:%lu",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
-            fprintf (fp, ":%s:%s\n", recvString, offset);
+            fprintf (fp, ":%s:%s\n", offset, recvString);
             break;
 
         default:
