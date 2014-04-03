@@ -1,0 +1,14 @@
+54.84.22.116 AwsNVirginia.pem
+54.85.217.235 AwsNVirginia.pem
+54.215.151.95 AwsNCalifornia.pem
+54.215.220.111 AwsNCalifornia.pem
+54.72.156.82 AwsIreland.pem
+54.72.156.172 AwsIreland.pem
+54.254.221.227 AwsSingapore.pem
+54.254.250.125 AwsSingapore.pem
+54.238.176.144 AwsTokyo.pem
+54.238.178.253 AwsTokyo.pem
+54.206.115.153 AwsSydney.pem
+54.206.117.181 AwsSydney.pem
+54.207.57.191 AwsSaoPaulo.pem
+54.207.58.67 AwsSaoPaulo.pem
