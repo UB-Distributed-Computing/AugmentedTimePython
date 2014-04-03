@@ -86,15 +86,7 @@ void ATTime::createSendEvent()
     ATTime *e = &g_attime;
     ATTime *f = new ATTime();
 
-    f->mLogicalTime = std::max(e->mLogicalTime, f->mPhysicalTime);
-    if (f->mLogicalTime == e->mLogicalTime)
-    {
-        f->mLogicalCount = e->mLogicalCount + 1;
-    }
-    else
-    {
-        f->mLogicalCount = 0;
-    }
+    f->mLogicalTime = std::max(e->mLogicalTime + 1, f->mPhysicalTime);
 
     g_attime.copyClock(f);
     writeState(g_logfile, 0);
@@ -107,24 +99,7 @@ void ATTime::createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCou
     ATTime *e = &g_attime;
     ATTime *f = new ATTime(); // f physical time is up-to-date
 
-    f->mLogicalTime = std::max(e->mLogicalTime, std::max(msgLogicalTime, f->mPhysicalTime));
-
-    if ((f->mLogicalTime == e->mLogicalTime) && (f->mLogicalTime == msgLogicalTime))
-    {
-        f->mLogicalCount = std::max(e->mLogicalCount, msgLogicalCount) + 1;
-    }
-    else if (f->mLogicalTime == e->mLogicalTime)
-    {
-        f->mLogicalCount = e->mLogicalCount + 1;
-    }
-    else if (f->mLogicalTime == msgLogicalTime)
-    {
-        f->mLogicalCount = msgLogicalCount + 1;
-    }
-    else
-    {
-        f->mLogicalCount = 0;
-    }
+    f->mLogicalTime = std::max(e->mLogicalTime + 1, std::max(msgLogicalTime + 1, f->mPhysicalTime));
 
     g_attime.copyClock(f);
     writeState(g_logfile, 1, recvString);
@@ -206,7 +181,7 @@ void* Receiver(void* dummy)
 
 int main (int argc, char* argv[])
 {
-    char *filename = (char *)"dump.log";
+    char *filename = (char *)"dump_alg1.log";
 
     if(argc < 3)
     {    
