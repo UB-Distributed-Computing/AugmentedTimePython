@@ -53,27 +53,25 @@ ATTime g_attime;
 
 void writeState(FILE *fp, int type, char *recvString = NULL)
 {
-    //char *offset = GetOffset();
+    char *offset = GetOffset();
 
     switch(type)
     {
         case 0: // send event
             fprintf (fp, "Send:");
-            //fprintf (fp, "%s:%lu:%lu:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
-            fprintf (fp, "%s:%lu:%lu:%lu\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
+            fprintf (fp, "%s:%lu:%lu:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
             break;
         case 1: // recv event
             fprintf (fp, "Recv:");
             fprintf (fp, "%s:%lu:%lu:%lu",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
-            //fprintf (fp, ":%s:%s\n", offset, recvString);
-            fprintf (fp, ":%s\n",  recvString);
+            fprintf (fp, ":%s:%s\n", offset, recvString);
             break;
 
         default:
             break;
     }
 
-    //free(offset);
+    free(offset);
 }
 
 void ATTime::copyClock(ATTime *src)
@@ -88,15 +86,7 @@ void ATTime::createSendEvent()
     ATTime *e = &g_attime;
     ATTime *f = new ATTime();
 
-    f->mLogicalTime = std::max(e->mLogicalTime, f->mPhysicalTime);
-    if (f->mLogicalTime == e->mLogicalTime)
-    {
-        f->mLogicalCount = e->mLogicalCount + 1;
-    }
-    else
-    {
-        f->mLogicalCount = 0;
-    }
+    f->mLogicalTime = std::max(e->mLogicalTime + 1, f->mPhysicalTime);
 
     g_attime.copyClock(f);
     writeState(g_logfile, 0);
@@ -109,24 +99,7 @@ void ATTime::createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCou
     ATTime *e = &g_attime;
     ATTime *f = new ATTime(); // f physical time is up-to-date
 
-    f->mLogicalTime = std::max(e->mLogicalTime, std::max(msgLogicalTime, f->mPhysicalTime));
-
-    if ((f->mLogicalTime == e->mLogicalTime) && (f->mLogicalTime == msgLogicalTime))
-    {
-        f->mLogicalCount = std::max(e->mLogicalCount, msgLogicalCount) + 1;
-    }
-    else if (f->mLogicalTime == e->mLogicalTime)
-    {
-        f->mLogicalCount = e->mLogicalCount + 1;
-    }
-    else if (f->mLogicalTime == msgLogicalTime)
-    {
-        f->mLogicalCount = msgLogicalCount + 1;
-    }
-    else
-    {
-        f->mLogicalCount = 0;
-    }
+    f->mLogicalTime = std::max(e->mLogicalTime + 1, std::max(msgLogicalTime + 1, f->mPhysicalTime));
 
     g_attime.copyClock(f);
     writeState(g_logfile, 1, recvString);
@@ -208,7 +181,7 @@ void* Receiver(void* dummy)
 
 int main (int argc, char* argv[])
 {
-    char *filename = (char *)"dump.log";
+    char *filename = (char *)"dump_alg1.log";
 
     if(argc < 3)
     {    
@@ -267,17 +240,16 @@ int main (int argc, char* argv[])
         {
             pthread_mutex_lock(&g_lock_lc);
             g_attime.createSendEvent();
-            //char *offset = GetOffset();
-            //sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
-            //free(offset);
-            sprintf(message, "%s:%ld:%ld:%ld", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
+            char *offset = GetOffset();
+            sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            free(offset);
             pthread_mutex_unlock(&g_lock_lc);
 
             zmq_send(responder[i], message, 300, 0);
             char buffer[10];
             zmq_recv(responder[i], buffer,5,0);
         }
-	sleep(1);
+
         //sleepTime = rand() % 5;
         //sleep(sleepTime);
     }
