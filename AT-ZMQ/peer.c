@@ -53,25 +53,27 @@ ATTime g_attime;
 
 void writeState(FILE *fp, int type, char *recvString = NULL)
 {
-    char *offset = GetOffset();
+    //char *offset = GetOffset();
 
     switch(type)
     {
         case 0: // send event
             fprintf (fp, "Send:");
-            fprintf (fp, "%s:%lu:%lu:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            //fprintf (fp, "%s:%lu:%lu:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            fprintf (fp, "%s:%lu:%lu:%lu\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             break;
         case 1: // recv event
             fprintf (fp, "Recv:");
             fprintf (fp, "%s:%lu:%lu:%lu",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
-            fprintf (fp, ":%s:%s\n", offset, recvString);
+            //fprintf (fp, ":%s:%s\n", offset, recvString);
+            fprintf (fp, ":%s\n",  recvString);
             break;
 
         default:
             break;
     }
 
-    free(offset);
+    //free(offset);
 }
 
 void ATTime::copyClock(ATTime *src)
@@ -265,16 +267,17 @@ int main (int argc, char* argv[])
         {
             pthread_mutex_lock(&g_lock_lc);
             g_attime.createSendEvent();
-            char *offset = GetOffset();
-            sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
-            free(offset);
+            //char *offset = GetOffset();
+            //sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            //free(offset);
+            sprintf(message, "%s:%ld:%ld:%ld", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             pthread_mutex_unlock(&g_lock_lc);
 
             zmq_send(responder[i], message, 300, 0);
             char buffer[10];
             zmq_recv(responder[i], buffer,5,0);
         }
-
+	sleep(1);
         //sleepTime = rand() % 5;
         //sleep(sleepTime);
     }
