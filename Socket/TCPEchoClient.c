@@ -8,10 +8,20 @@
 #include <arpa/inet.h>
 
 // includes
-#include <DieWithMessage.h>
 
 // defines
 #define BUFSIZE 1024
+void dieWithSystemMessage(char * msg)
+{
+    printf("%s", msg);
+    exit(0);
+}
+
+void dieWithUserMessage(char * msg, char* msg1)
+{
+    printf("%s: %s", msg, msg1);
+    exit(0);
+}
 
 int main(int argc, char* argv[])
 {
