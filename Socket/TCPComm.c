@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
             dieWithMessage("inet_pton() failed");
         remoteAddr.sin_port = htons(remotePort);
 
+        peerFds[i-1] = socket(AF_INET, SOCK_STREAM, 0);
         if(connect(peerFds[i-1], (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0)
             dieWithMessage("connect() failed");
 
