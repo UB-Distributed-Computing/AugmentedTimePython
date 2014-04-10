@@ -1,2 +1,2 @@
 all:
-	g++ -g -o peer peer.c
+	g++ -g -o peer -pthread peer.c

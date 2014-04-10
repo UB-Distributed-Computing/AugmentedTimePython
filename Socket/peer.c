@@ -26,7 +26,7 @@ FILE *g_logfile = NULL;
 char* GetOffset();
 void init (char** argv);
 
-void dieWithMessage(char * msg)
+void dieWithMessage(const char* msg)
 {
     printf("%s\n", msg);
     exit(0);
