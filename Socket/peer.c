@@ -223,7 +223,7 @@ void* Receiver(void* dummy)
                         dieWithMessage("recv() Connection closed prematurely");
 
                     buffer[numBytes] = '\0';
-
+                    printf("buffer: %s\n",buffer);
                     strcpy(buffercopy, buffer);
                     char * chClient = strtok(buffer, ":");
                     char * strLogClk = strtok(NULL,":");
