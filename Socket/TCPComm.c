@@ -64,6 +64,11 @@ int main(int argc, char *argv[])
 
     while (1)
     {
+        FD_ZERO(&rfds);
+        for(i=0; i < peerCount; i++)
+        {
+            FD_SET(peerFds[i], &rfds);
+        }
         err = select(maxFd + 1, &rfds, NULL, NULL, NULL);
 
         if (err == -1)
@@ -85,7 +90,7 @@ int main(int argc, char *argv[])
                     buffer[numBytes] = '\0';
 
                     printf("%s\n", buffer);
-                    FD_CLR(peerFds[i], &rfds);
+                    //FD_CLR(peerFds[i], &rfds);
                 }
             }
         }
