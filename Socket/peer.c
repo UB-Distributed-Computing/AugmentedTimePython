@@ -189,10 +189,11 @@ char* GetOffset()
 void* Receiver(void* dummy)
 {
     fd_set rfds;
-    int i, err, numBytes;
+    int i, err, bytesRecvd, bytesRem;
 
     char buffer [BUFSIZE];
     char buffercopy[BUFSIZE];
+    char *bufferHead = NULL;
 
     init((char **)dummy);
 
@@ -216,14 +217,20 @@ void* Receiver(void* dummy)
             {
                 if(FD_ISSET(g_peerFds[i], &rfds))
                 {
-                    numBytes = recv(g_peerFds[i], buffer, BUFSIZE-1, 0);
-                    if(numBytes < 0)
-                        dieWithMessage("recv() failed");
-                    else if(numBytes == 0)
-                        dieWithMessage("recv() Connection closed prematurely");
+                    bufferHead = buffer;
+                    bytesRem = BUFSIZE;
+                    while(bytesRem)
+                    {
+                        bytesRecvd = recv(g_peerFds[i], bufferHead, BUFSIZE, 0);
+                        if(bytesRecvd < 0)
+                            dieWithMessage("recv() failed");
+                        else if(bytesRecvd == 0)
+                            dieWithMessage("recv() Connection closed prematurely");
 
-                    buffer[numBytes] = '\0';
-                    printf("buffer: %s\n",buffer);
+                        bytesRem -= bytesRecvd;
+                        bufferHead += bytesRecvd;
+                    }
+
                     strcpy(buffercopy, buffer);
                     char * chClient = strtok(buffer, ":");
                     char * strLogClk = strtok(NULL,":");
@@ -370,7 +377,10 @@ int main (int argc, char* argv[])
 
     //Send Logic starts
     char message[300];
+    char *messageHead = NULL;
     int sleepTime = 0;
+    int bytesRem;
+    int bytesSent;
     while (1)
     {
         for (int i = 0; i < g_peerCount; i++)
@@ -383,7 +393,14 @@ int main (int argc, char* argv[])
             sprintf(message, "%s:%ld:%ld:%ld", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             pthread_mutex_unlock(&g_lock_lc);
 
-            send(sendFds[i], message, 300, 0);
+            bytesRem = 300;
+            messageHead = message;
+            while (bytesRem)
+            {
+                bytesSent = send(sendFds[i], messageHead, 300, 0);
+                bytesRem -= bytesSent;
+                messageHead += bytesSent;
+            }
         }
         sleep(1);
         //sleepTime = rand() % 5;
