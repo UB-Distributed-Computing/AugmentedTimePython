@@ -7,7 +7,10 @@
 #include <memory.h>
 #include <sys/time.h>
 #include <algorithm>
-#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 char g_myID[3];
 pthread_mutex_t g_lock_lc;
@@ -18,9 +21,10 @@ int g_maxFd, g_peerCount;
 
 FILE *g_logfile = NULL;
 
-#define BUFSIZE 1024
+#define BUFSIZE 300
 
 char* GetOffset();
+void init (char** argv);
 
 void dieWithMessage(char * msg)
 {
@@ -185,10 +189,12 @@ char* GetOffset()
 void* Receiver(void* dummy)
 {
     fd_set rfds;
-    int i;
+    int i, err, numBytes;
 
     char buffer [BUFSIZE];
     char buffercopy[BUFSIZE];
+
+    init((char **)dummy);
 
     while (1)
     {
@@ -196,7 +202,7 @@ void* Receiver(void* dummy)
 
         for(i=0; i < g_peerCount; i++)
         {
-            FD_SET(peerFds[i], &rfds);
+            FD_SET(g_peerFds[i], &rfds);
         }
         err = select(g_maxFd + 1, &rfds, NULL, NULL, NULL);
 
@@ -208,9 +214,9 @@ void* Receiver(void* dummy)
         {
             for (i = 0; i < g_peerCount; i++)
             {
-                if(FD_ISSET(peerFds[i], &rfds))
+                if(FD_ISSET(g_peerFds[i], &rfds))
                 {
-                    numBytes = recv(peerFds[i], buffer, BUFSIZE-1, 0);
+                    numBytes = recv(g_peerFds[i], buffer, BUFSIZE-1, 0);
                     if(numBytes < 0)
                         dieWithMessage("recv() failed");
                     else if(numBytes == 0)
@@ -243,14 +249,14 @@ void* Receiver(void* dummy)
 
 void init (char* argv[])
 {
-    int i, err, numBytes;
+    int i, err, numBytes, retryCount;
     in_port_t remotePort;
     struct sockaddr_in remoteAddr;
     char *strIp, *strPort;
 
     char buffer[BUFSIZE];
 
-    if (argv == NULL || npeers <= 0)
+    if (argv == NULL)
         return;
 
     g_peerFds = (int *)malloc(g_peerCount * sizeof(int));
@@ -261,6 +267,8 @@ void init (char* argv[])
 
     for (i = 0; i < g_peerCount; i++)
     {
+        retryCount = 100;
+
         strIp = strtok(argv[i], ":");
         strPort = strtok(NULL, ":");
 
@@ -277,8 +285,14 @@ void init (char* argv[])
         remoteAddr.sin_port = htons(remotePort);
 
         g_peerFds[i] = socket(AF_INET, SOCK_STREAM, 0);
-        if(connect(g_peerFds[i], (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0)
-            dieWithMessage("connect() failed");
+        while((connect(g_peerFds[i], (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0) && (retryCount > 0))
+        {
+            sleep(1);
+            retryCount--;
+        }
+
+        if (retryCount == 0)
+            dieWithMessage("Connect failed");
 
         g_maxFd = (g_peerFds[i] > g_maxFd) ? g_peerFds[i] : g_maxFd;
     }
@@ -308,35 +322,51 @@ int main (int argc, char* argv[])
     }
 
     g_peerCount = argc - 2;
-    init(&argv[2]);
 
     //spawn the receiver
-    int err = pthread_create(&thread_id, NULL, &Receiver, (void*)NULL);
+    int err = pthread_create(&thread_id, NULL, &Receiver, (void*)&argv[2]);
     if (err != 0)
     {
         printf("\ncan't create thread :[%s]", strerror(err));
         return 1;
     }
 
-    void **responder = new void*[g_peerCount];
-    void *context = zmq_ctx_new();
-    char peerIpPort[20];
+    int *sendFds = NULL;
 
-    for(int i = 2; i < argc; i++)
+    sendFds = (int *)malloc(sizeof(int) * g_peerCount);
+
+    // Create socket for incoming connections
+    int servSock; // Socket descriptor for server
+    if((servSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+        dieWithMessage("socket() failed\n");
+
+    //Construct local address structure
+    struct sockaddr_in servAddr;                    // Local address
+    memset(&servAddr, 0 , sizeof(servAddr));        // Zero out structure
+    servAddr.sin_family = AF_INET;                  // IPv4 address family
+    servAddr.sin_addr.s_addr = htonl(INADDR_ANY);   // Any incoming interface
+    servAddr.sin_port = htons(12345);               // Local port
+
+    // Bind to the local address
+    if(bind(servSock, (struct sockaddr*) &servAddr, sizeof(servAddr)) < 0)
+        dieWithMessage("bind() failed");
+
+    // Mark the socket so it will listen for incoming connections
+    if(listen(servSock, g_peerCount) < 0)
+        dieWithMessage("listen() failed");
+
+    for (int i=0; i < g_peerCount; i++)
     {
-        sprintf(peerIpPort, "tcp://%s", argv[i]);
-        printf("\nConnecting to %s\n", peerIpPort);
-        responder[i-2] = zmq_socket (context, ZMQ_REQ);
-        int rc = zmq_connect (responder[i-2], peerIpPort);
-        printf("%d\n", rc);
-        sleep(2);
-        if(rc==0)
-        {
-            printf("\nConnected to peer:%s\n", peerIpPort);
-        }
-        assert (rc == 0);
+        struct sockaddr_in clntAddr; // Client address
+        // Set length of client address structure (in-out parameter)
+        socklen_t clntAddrLen = sizeof(clntAddr);
+        // Wait for a client to connect
+        sendFds[i] = accept(servSock, (struct sockaddr *) &clntAddr, &clntAddrLen);
+        if (sendFds[i] < 0)
+            dieWithMessage("accept() failed");
     }
-    printf("\nConnected with all the peers\n");
+
+    printf ("Accepted connections from all peers\n");
 
     //Send Logic starts
     char message[300];
@@ -347,17 +377,15 @@ int main (int argc, char* argv[])
         {
             pthread_mutex_lock(&g_lock_lc);
             g_attime.createSendEvent();
-            //char *offset = GetOffset();
-            //sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
-            //free(offset);
+            char *offset = GetOffset();
+            sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            free(offset);
             sprintf(message, "%s:%ld:%ld:%ld", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             pthread_mutex_unlock(&g_lock_lc);
 
-            zmq_send(responder[i], message, 300, 0);
-            char buffer[10];
-            zmq_recv(responder[i], buffer,5,0);
+            send(sendFds[i], message, 300, 0);
         }
-	sleep(1);
+        sleep(1);
         //sleepTime = rand() % 5;
         //sleep(sleepTime);
     }

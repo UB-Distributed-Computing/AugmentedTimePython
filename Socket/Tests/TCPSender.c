@@ -18,9 +18,9 @@ void dieWithMessage(char * msg)
 int main(int argc, char *argv[])
 {
     char buffer[BUFSIZE];
-    int *peerFds = NULL;
+    int *sendFds = NULL;
 
-    peerFds = (int *)malloc(sizeof(int) * PEER_COUNT);
+    sendFds = (int *)malloc(sizeof(int) * PEER_COUNT);
 
     // Create socket for incoming connections
     int servSock; // Socket descriptor for server
@@ -48,19 +48,19 @@ int main(int argc, char *argv[])
         // Set length of client address structure (in-out parameter)
         socklen_t clntAddrLen = sizeof(clntAddr);
         // Wait for a client to connect
-        peerFds[i] = accept(servSock, (struct sockaddr *) &clntAddr, &clntAddrLen);
-        if (peerFds[i] < 0)
+        sendFds[i] = accept(servSock, (struct sockaddr *) &clntAddr, &clntAddrLen);
+        if (sendFds[i] < 0)
             dieWithMessage("accept() failed");
     }
 
     for (int i=0; i < PEER_COUNT; i++)
     {
-        ssize_t numBytesSent = send(peerFds[i], "Hello", 6, 0);
+        ssize_t numBytesSent = send(sendFds[i], "Hello", 6, 0);
         if (numBytesSent < 0)
             dieWithMessage("send() failed");
     }
 
-    free(peerFds);
+    free(sendFds);
 
     // NOT REACHED
     return 0;
