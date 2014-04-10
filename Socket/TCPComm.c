@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     FD_ZERO(&rfds);
     maxFd = 0;
 
-    for (i = 0; i < peerCount; i++)
+    for (i = 1; i <= peerCount; i++)
     {
         strIp = strtok(argv[i], ":");
         strPort = strtok(NULL, ":");
@@ -85,6 +85,7 @@ int main(int argc, char *argv[])
                     buffer[numBytes] = '\0';
 
                     printf("%s\n", buffer);
+                    FD_CLR(peerFds[i], &rfds);
                 }
             }
         }
