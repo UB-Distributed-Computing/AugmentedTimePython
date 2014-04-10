@@ -54,11 +54,11 @@ int main(int argc, char *argv[])
             dieWithMessage("inet_pton() failed");
         remoteAddr.sin_port = htons(remotePort);
 
-        if(connect(peerFds[i], (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0)
+        if(connect(peerFds[i-1], (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0)
             dieWithMessage("connect() failed");
 
-        FD_SET(peerFds[i], &rfds);
-        maxFd = (peerFds[i] > maxFd) ? peerFds[i] : maxFd;
+        FD_SET(peerFds[i-1], &rfds);
+        maxFd = (peerFds[i-1] > maxFd) ? peerFds[i-1] : maxFd;
     }
 
     while (1)
