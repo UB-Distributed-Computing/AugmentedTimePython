@@ -72,12 +72,12 @@ void writeState(FILE *fp, int type, char *recvString = NULL)
     {
         case 0: // send event
             fprintf (fp, "Send:");
-            fprintf (fp, "%s:%lu:%lu:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            fprintf (fp, "%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
             //fprintf (fp, "%s:%lu:%lu:%lu\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             break;
         case 1: // recv event
             fprintf (fp, "Recv:");
-            fprintf (fp, "%s:%lu:%lu:%lu",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
+            fprintf (fp, "%s:%lu:[%lu]:%lu",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             //fprintf (fp, ":%s:%s\n", offset, recvString);
             fprintf (fp, ":%s\n",  recvString);
             break;
@@ -388,7 +388,7 @@ int main (int argc, char* argv[])
             pthread_mutex_lock(&g_lock_lc);
             g_attime.createSendEvent();
             char *offset = GetOffset();
-            sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            sprintf(message, "%s:%ld:[%ld]:%ld:%s", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
             free(offset);
             //sprintf(message, "%s:%ld:%ld:%ld", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             pthread_mutex_unlock(&g_lock_lc);
