@@ -66,14 +66,14 @@ ATTime g_attime;
 
 void writeState(FILE *fp, int type, char *recvString = NULL)
 {
-    //char *offset = GetOffset();
+    char *offset = GetOffset();
 
     switch(type)
     {
         case 0: // send event
             fprintf (fp, "Send:");
-            //fprintf (fp, "%s:%lu:%lu:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
-            fprintf (fp, "%s:%lu:%lu:%lu\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
+            fprintf (fp, "%s:%lu:%lu:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            //fprintf (fp, "%s:%lu:%lu:%lu\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             break;
         case 1: // recv event
             fprintf (fp, "Recv:");
@@ -86,7 +86,7 @@ void writeState(FILE *fp, int type, char *recvString = NULL)
             break;
     }
 
-    //free(offset);
+    free(offset);
 }
 
 void ATTime::copyClock(ATTime *src)
@@ -402,7 +402,7 @@ int main (int argc, char* argv[])
                 messageHead += bytesSent;
             }
         }
-        //sleep(1);
+        sleep(1);
         //sleepTime = rand() % 5;
         //sleep(sleepTime);
     }
