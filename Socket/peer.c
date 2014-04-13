@@ -402,7 +402,7 @@ int main (int argc, char* argv[])
                 messageHead += bytesSent;
             }
         }
-        sleep(1);
+        usleep(250000);
         //sleepTime = rand() % 5;
         //sleep(sleepTime);
     }
