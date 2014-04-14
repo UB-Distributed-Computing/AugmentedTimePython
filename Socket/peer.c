@@ -388,7 +388,7 @@ int main (int argc, char* argv[])
             pthread_mutex_lock(&g_lock_lc);
             g_attime.createSendEvent();
             char *offset = GetOffset();
-            sprintf(message, "%s:%ld:[%ld]:%ld:%s", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
             free(offset);
             //sprintf(message, "%s:%ld:%ld:%ld", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             pthread_mutex_unlock(&g_lock_lc);
