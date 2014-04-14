@@ -7,11 +7,11 @@ count=1
 for myip in `cat ips.txt`
 do
 
-command="cd ~/AT/AugmentedTimePython/AT-ZMQ/;git reset --hard;git pull;rm events.log nohup.out"
+command="cd ~/AT/AugmentedTimePython/Socket/;git reset --hard;git pull;rm events.log nohup.out"
 
 cert=`cat data.txt |grep $myip|awk '{print $2}'`
-scp -i cert/$cert ubuntu@$myip:/home/ubuntu/AT/AugmentedTimePython/AT-ZMQ/events.log $myip.events.log
-scp -i cert/$cert ubuntu@$myip:/home/ubuntu/AT/AugmentedTimePython/AT-ZMQ/nohup.out $myip.nohup.out
+scp -i cert/$cert ubuntu@$myip:/home/ubuntu/AT/AugmentedTimePython/Socket/events.log $myip.events.log
+scp -i cert/$cert ubuntu@$myip:/home/ubuntu/AT/AugmentedTimePython/Socket/nohup.out $myip.nohup.out
 
 count=$((count + 1))
 done
