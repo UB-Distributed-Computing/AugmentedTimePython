@@ -22,7 +22,7 @@ int g_maxFd, g_peerCount;
 FILE *g_logfile = NULL;
 
 #define BUFSIZE 300
-
+#define NUM_MESSAGES 1000
 char* GetOffset();
 void init (char** argv);
 
@@ -57,7 +57,7 @@ class ATTime
     }
 
     void createSendEvent(); 
-    void createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString);
+    void createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString, ATTime* f);
     void copyClock(ATTime *src);
 };
 
@@ -117,10 +117,9 @@ void ATTime::createSendEvent()
     delete f;
 }
 
-void ATTime::createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString)
+void ATTime::createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString, ATTime *f)
 {
     ATTime *e = &g_attime;
-    ATTime *f = new ATTime(); // f physical time is up-to-date
 
     f->mLogicalTime = std::max(e->mLogicalTime, std::max(msgLogicalTime, f->mPhysicalTime));
 
@@ -230,7 +229,7 @@ void* Receiver(void* dummy)
                         bytesRem -= bytesRecvd;
                         bufferHead += bytesRecvd;
                     }
-
+                    ATTime *f = new ATTime();
                     strcpy(buffercopy, buffer);
                     char * chClient = strtok(buffer, ":");
                     char * strLogClk = strtok(NULL,":");
@@ -242,7 +241,7 @@ void* Receiver(void* dummy)
                     __uint64_t PhyTime = strtol(strPhyTime,NULL,10);
 
                     pthread_mutex_lock(&g_lock_lc);
-                    g_attime.createRecvEvent(LogClk, LogCnt, PhyTime, buffercopy);
+                    g_attime.createRecvEvent(LogClk, LogCnt, PhyTime, buffercopy, f);
                     pthread_mutex_unlock(&g_lock_lc);
                 }
             }
@@ -385,11 +384,12 @@ int main (int argc, char* argv[])
     {
         for (int i = 0; i < g_peerCount; i++)
         {
+
+            char *offset = GetOffset();
             pthread_mutex_lock(&g_lock_lc);
             g_attime.createSendEvent();
-            char *offset = GetOffset();
+            g_attime.mPhysicalTime = getCurrentPhysicalTime();
             sprintf(message, "%s:%ld:%ld:%ld:%s", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
-            free(offset);
             //sprintf(message, "%s:%ld:%ld:%ld", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             pthread_mutex_unlock(&g_lock_lc);
 
@@ -401,6 +401,8 @@ int main (int argc, char* argv[])
                 bytesRem -= bytesSent;
                 messageHead += bytesSent;
             }
+            
+            free(offset);
         }
         //usleep(250000);
         //sleepTime = rand() % 5;
