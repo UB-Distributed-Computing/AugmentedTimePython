@@ -21,10 +21,14 @@ int g_maxFd, g_peerCount;
 
 FILE *g_logfile = NULL;
 
-#define BUFSIZE 300
+char *g_buffer = NULL;
+unsigned g_msg_count = 0;
+
+#define BUFSIZE 150
 #define NUM_MESSAGES 1000
 char* GetOffset();
 void init (char** argv);
+void dumpBufferToFile(FILE *fp);
 
 void dieWithMessage(const char* msg)
 {
@@ -64,22 +68,37 @@ class ATTime
 // global time
 ATTime g_attime;
 
+void dumpBufferToFile(FILE *fp)
+{
+    char *buf = g_buffer;
+
+    for (int msg_count = 0; msg_count < g_msg_count; msg_count++)
+    {
+        buf += msg_count * BUFSIZE;
+        fprintf (fp, "%s", buf);
+    }
+}
+
 void writeState(FILE *fp, int type, char *recvString = NULL)
 {
     char *offset = GetOffset();
 
+    char *buf = g_buffer + g_msg_count * BUFSIZE;
+
     switch(type)
     {
         case 0: // send event
-            fprintf (fp, "Send:");
-            fprintf (fp, "%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            //fprintf (fp, "Send:");
+            //fprintf (fp, "%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
             //fprintf (fp, "%s:%lu:%lu:%lu\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
+            sprintf (buf, "Send:%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
             break;
         case 1: // recv event
-            fprintf (fp, "Recv:");
-            fprintf (fp, "%s:%lu:[%lu]:%lu",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
+            //fprintf (fp, "Recv:");
+            //fprintf (fp, "%s:%lu:[%lu]:%lu",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             //fprintf (fp, ":%s:%s\n", offset, recvString);
-            fprintf (fp, ":%s\n",  recvString);
+            //fprintf (fp, ":%s\n",  recvString);
+            sprintf (buf, "Recv:%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, recvString);
             break;
 
         default:
@@ -87,6 +106,8 @@ void writeState(FILE *fp, int type, char *recvString = NULL)
     }
 
     free(offset);
+
+    g_msg_count++;
 }
 
 void ATTime::copyClock(ATTime *src)
@@ -314,6 +335,13 @@ int main (int argc, char* argv[])
         exit(1);
     }
 
+    g_buffer = (char *)malloc(BUFSIZE * NUM_MESSAGES * (argc - 1));
+    if (g_buffer == NULL)
+    {
+        printf("Memory too low\n");
+        exit(1);
+    }
+
     g_logfile = fopen("events.log", "w");
     assert (g_logfile != NULL);
 
@@ -375,12 +403,13 @@ int main (int argc, char* argv[])
     printf ("Accepted connections from all peers\n");
 
     //Send Logic starts
-    char message[300];
+    char message[BUFSIZE];
     char *messageHead = NULL;
     int sleepTime = 0;
     int bytesRem;
     int bytesSent;
-    while (1)
+
+    for (int k = 0; k < NUM_MESSAGES; k++)
     {
         for (int i = 0; i < g_peerCount; i++)
         {
@@ -393,11 +422,11 @@ int main (int argc, char* argv[])
             //sprintf(message, "%s:%ld:%ld:%ld", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             pthread_mutex_unlock(&g_lock_lc);
 
-            bytesRem = 300;
+            bytesRem = BUFSIZE;
             messageHead = message;
             while (bytesRem)
             {
-                bytesSent = send(sendFds[i], messageHead, 300, 0);
+                bytesSent = send(sendFds[i], messageHead, BUFSIZE, 0);
                 bytesRem -= bytesSent;
                 messageHead += bytesSent;
             }
@@ -408,6 +437,9 @@ int main (int argc, char* argv[])
         //sleepTime = rand() % 5;
         //sleep(sleepTime);
     }
+    sleep(30);
+    dumpBufferToFile(g_logfile);
+    fclose(g_logfile);
 
     return 0;
 }
