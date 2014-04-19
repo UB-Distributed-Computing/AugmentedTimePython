@@ -440,6 +440,6 @@ int main (int argc, char* argv[])
     sleep(30);
     dumpBufferToFile(g_logfile);
     fclose(g_logfile);
-
+    while(1);
     return 0;
 }
