@@ -71,7 +71,7 @@ ATTime g_attime;
 void dumpBufferToFile(FILE *fp)
 {
     char *buf = g_buffer;
-
+    fprintf(fp, "%s\n", "Writing from buffer");
     for (int msg_count = 0; msg_count < g_msg_count; msg_count++)
     {
         buf += msg_count * BUFSIZE;
