@@ -83,7 +83,6 @@ void dumpBufferToFile(FILE *fp)
 
 void writeState(FILE *fp, int type, char *recvString = NULL)
 {
-    printf ("writeState start\n");
     char *offset = GetOffset();
 
     char *buf = g_buffer + g_msg_count * BUFSIZE;
@@ -111,7 +110,6 @@ void writeState(FILE *fp, int type, char *recvString = NULL)
     free(offset);
 
     g_msg_count++;
-    printf ("writeState end\n");
 }
 
 void ATTime::copyClock(ATTime *src)
@@ -488,6 +486,5 @@ int main (int argc, char* argv[])
     sleep(30);
     dumpBufferToFile(g_logfile);
     fclose(g_logfile);
-    while(1);
     return 0;
 }
