@@ -108,7 +108,7 @@ void writeState(FILE *fp, int type, char *recvString = NULL)
             break;
     }
 
-    free(offset);
+    //free(offset);
 
     g_msg_count++;
 }
@@ -469,7 +469,7 @@ int main (int argc, char* argv[])
                 messageHead += bytesSent;
             }
             
-            free(offset);
+            //free(offset);
         }
         //usleep(250000);
         //sleepTime = rand() % 5;
