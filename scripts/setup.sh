@@ -15,7 +15,7 @@ set background=dark
 """ >> ~/.vimrc
 
 yes Y|sudo apt-get update
-yes Y|sudo apt-get install gcc g++ make autoconf automake git libtool ntp
+yes Y|sudo apt-get install gcc g++ make gdb strace autoconf automake git libtool ntp
 
 #sudo rm -rf zeromq-4.0.4.tar.gz zeromq-4.0.4
 #wget http://download.zeromq.org/zeromq-4.0.4.tar.gz
