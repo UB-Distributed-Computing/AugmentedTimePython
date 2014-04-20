@@ -343,7 +343,7 @@ void init (char* argv[])
         g_peerFds[i] = socket(AF_INET, SOCK_STREAM, 0);
         while((connect(g_peerFds[i], (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0) && (retryCount > 0))
         {
-            sleep(1);
+            sleep(2);
             retryCount--;
         }
 
@@ -411,8 +411,11 @@ int main (int argc, char* argv[])
     servAddr.sin_port = htons(12345);               // Local port
 
     // Bind to the local address
-    if(bind(servSock, (struct sockaddr*) &servAddr, sizeof(servAddr)) < 0)
-        dieWithMessage("bind() failed");
+    while(bind(servSock, (struct sockaddr*) &servAddr, sizeof(servAddr)) < 0)
+    {
+        printf("bind() failed");
+        sleep(10);
+    }
 
     // Mark the socket so it will listen for incoming connections
     if(listen(servSock, g_peerCount) < 0)
