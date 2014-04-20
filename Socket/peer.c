@@ -280,7 +280,7 @@ void* Receiver(void* dummy)
         }
         else
         {
-            return; // timeout of 30 seconds. all done!
+            return NULL; // timeout of 30 seconds. all done!
         }
     }
 }
