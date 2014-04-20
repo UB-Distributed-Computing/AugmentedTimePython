@@ -33,7 +33,6 @@ void dumpBufferToFile(FILE *fp);
 
 void dieWithMessage(const char* msg)
 {
-    dumpBufferToFile(g_logfile);
     printf("%s\n", msg);
     exit(0);
 }
@@ -95,14 +94,14 @@ void writeState(FILE *fp, int type, char *recvString = NULL)
             //fprintf (fp, "Send:");
             //fprintf (fp, "%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
             //fprintf (fp, "%s:%lu:%lu:%lu\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
-            sprintf (buf, "Send:%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            snprintf (buf, BUFSIZE, "Send:%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
             break;
         case 1: // recv event
             //fprintf (fp, "Recv:");
             //fprintf (fp, "%s:%lu:[%lu]:%lu",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             //fprintf (fp, ":%s:%s\n", offset, recvString);
             //fprintf (fp, ":%s\n",  recvString);
-            sprintf (buf, "Recv:%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, recvString);
+            snprintf (buf, BUFSIZE, "Recv:%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, recvString);
             break;
 
         default:
@@ -284,6 +283,14 @@ void* Receiver(void* dummy)
         }
         else
         {
+            for(i=0; i < g_peerCount; i++)
+            {
+                if (g_peerFds[i] != -1)
+                {
+                    close(g_peerFds[i]);
+                    g_peerFds[i] = -1;
+                }
+            }
             return NULL; // timeout of 30 seconds. all done!
         }
     }
@@ -446,6 +453,7 @@ int main (int argc, char* argv[])
                 bytesSent = send(sendFds[i], messageHead, BUFSIZE, 0);
                 if (bytesSent == -1 && errno == ECONNRESET)
                 {
+                    close(sendFds[i]);
                     sendFds[i] = -1;
                     break;
                 }
@@ -463,7 +471,10 @@ int main (int argc, char* argv[])
     for (int i = 0; i < g_peerCount; i++)
     {
         if (sendFds[i] != -1)
+        {
             close(sendFds[i]);
+            sendFds[i] = -1;
+        }
     }
 
     sleep(30);
