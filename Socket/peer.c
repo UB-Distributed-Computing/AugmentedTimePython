@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <errno.h>
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
@@ -424,6 +425,8 @@ int main (int argc, char* argv[])
     {
         for (int i = 0; i < g_peerCount; i++)
         {
+            if (sendFds[i] == -1)
+                break;
 
             char *offset = GetOffset();
             pthread_mutex_lock(&g_lock_lc);
@@ -438,6 +441,11 @@ int main (int argc, char* argv[])
             while (bytesRem)
             {
                 bytesSent = send(sendFds[i], messageHead, BUFSIZE, 0);
+                if (bytesSent == -1 && errno == ECONNRESET)
+                {
+                    sendFds[i] = -1;
+                    break;
+                }
                 bytesRem -= bytesSent;
                 messageHead += bytesSent;
             }
@@ -450,7 +458,10 @@ int main (int argc, char* argv[])
     }
 
     for (int i = 0; i < g_peerCount; i++)
-        close(sendFds[i]);
+    {
+        if (sendFds[i] != -1)
+            close(sendFds[i]);
+    }
 
     sleep(30);
     dumpBufferToFile(g_logfile);
