@@ -215,6 +215,9 @@ void* Receiver(void* dummy)
     char buffer [BUFSIZE];
     char buffercopy[BUFSIZE];
     char *bufferHead = NULL;
+    struct timeval timeout;
+    timeout.tv_sec = 30;
+    timeout.tv_usec = 0;
 
     init((char **)dummy);
 
@@ -224,9 +227,10 @@ void* Receiver(void* dummy)
 
         for(i=0; i < g_peerCount; i++)
         {
-            FD_SET(g_peerFds[i], &rfds);
+            if (g_peerFds[i] != -1)
+                FD_SET(g_peerFds[i], &rfds);
         }
-        err = select(g_maxFd + 1, &rfds, NULL, NULL, NULL);
+        err = select(g_maxFd + 1, &rfds, NULL, NULL, &timeout);
 
         if (err == -1)
         {
@@ -236,6 +240,9 @@ void* Receiver(void* dummy)
         {
             for (i = 0; i < g_peerCount; i++)
             {
+                if (g_peerFds[i] == -1) // this peer already exited
+                    continue;
+
                 if(FD_ISSET(g_peerFds[i], &rfds))
                 {
                     bufferHead = buffer;
@@ -246,7 +253,10 @@ void* Receiver(void* dummy)
                         if(bytesRecvd < 0)
                             dieWithMessage("recv() failed");
                         else if(bytesRecvd == 0)
-                            dieWithMessage("recv() Connection closed prematurely");
+                        {
+                            close(g_peerFds[i]);
+                            g_peerFds[i] = -1;
+                        }
 
                         bytesRem -= bytesRecvd;
                         bufferHead += bytesRecvd;
