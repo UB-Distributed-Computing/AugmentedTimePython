@@ -32,6 +32,7 @@ void dumpBufferToFile(FILE *fp);
 
 void dieWithMessage(const char* msg)
 {
+    dumpBufferToFile(g_logfile);
     printf("%s\n", msg);
     exit(0);
 }
