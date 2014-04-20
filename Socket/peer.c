@@ -443,12 +443,15 @@ int main (int argc, char* argv[])
             }
             
             free(offset);
-            close(sendFds[i]);
         }
         //usleep(250000);
         //sleepTime = rand() % 5;
         //sleep(sleepTime);
     }
+
+    for (int i = 0; i < g_peerCount; i++)
+        close(sendFds[i]);
+
     sleep(30);
     dumpBufferToFile(g_logfile);
     fclose(g_logfile);
