@@ -7,7 +7,7 @@ count=1
 for myip in `cat ips.txt`
 do
 
-cert=`cat data.txt |grep $myip|awk '{print $2}'`
+cert=`cat data.txt |grep "$myip "|awk '{print $2}'`
 ssh -t -t -i cert/$cert ubuntu@$myip < setup.sh
 
 count=$((count + 1))

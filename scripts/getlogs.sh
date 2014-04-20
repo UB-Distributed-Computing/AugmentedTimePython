@@ -9,7 +9,7 @@ do
 
 command="cd ~/AT/AugmentedTimePython/Socket/;git reset --hard;git pull;rm events.log nohup.out"
 
-cert=`cat data.txt |grep $myip|awk '{print $2}'`
+cert=`cat data.txt |grep "$myip "|awk '{print $2}'`
 scp -i cert/$cert ubuntu@$myip:/home/ubuntu/AT/AugmentedTimePython/Socket/events.log $myip.events.log
 scp -i cert/$cert ubuntu@$myip:/home/ubuntu/AT/AugmentedTimePython/Socket/nohup.out $myip.nohup.out
 

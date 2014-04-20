@@ -26,7 +26,7 @@ echo "$command 1> nohup.out 2> nohup.out &" >> command.sh
 command="exit"
 echo "$command" >> command.sh
 
-cert=`cat data.txt |grep $myip|awk '{print $2}'`
+cert=`cat data.txt |grep "$myip "|awk '{print $2}'`
 ssh -t -t -i cert/$cert ubuntu@$myip < command.sh
 rm command.sh
 
