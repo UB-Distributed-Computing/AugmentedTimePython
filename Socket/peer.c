@@ -280,7 +280,7 @@ void* Receiver(void* dummy)
         }
         else
         {
-            dieWithMessage("Select timedout!");
+            return; // timeout of 30 seconds. all done!
         }
     }
 }
