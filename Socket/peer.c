@@ -75,7 +75,7 @@ void dumpBufferToFile(FILE *fp)
     printf("Writing from buffer %d message \n", g_msg_count);
     for (int msg_count = 0; msg_count < g_msg_count; msg_count++)
     {
-        buf += msg_count * BUFSIZE;
+        buf = g_buffer + msg_count * BUFSIZE;
         fprintf (fp, "%s", buf);
     }
     printf("Done writing from buffer %d message \n", g_msg_count);
