@@ -255,7 +255,13 @@ void* Receiver(void* dummy)
                         bytesRecvd = recv(g_peerFds[i], bufferHead, BUFSIZE, 0);
                         if(bytesRecvd < 0)
                         {
-                            printf ("recv() failed with error %d. Retrying...\n", errno);
+                            if (errno == EINTR || errno == EAGAIN)
+                                printf ("recv() failed with error %d. Retrying...\n", errno);
+                            else
+                            {
+                                close(g_peerFds[i]);
+                                g_peerFds[i] = -1;
+                            }
                         }
                         else if(bytesRecvd == 0)
                         {
