@@ -10,7 +10,7 @@ do
 command="export LD_LIBRARY_PATH=~/AT/AugmentedTimePython/AT-ZMQ/lib"
 echo "$command" > command.sh
 
-command="cd ~/AT/AugmentedTimePython/Socket/;git reset --hard;git pull;rm events.log nohup.out"
+command="cd ~/AT/AugmentedTimePython/Socket/;git reset --hard;git pull;rm events.log nohup.out;make"
 echo "$command" >> command.sh
 
 command="nohup ./peer $count"
