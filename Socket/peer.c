@@ -83,7 +83,8 @@ void dumpBufferToFile(FILE *fp)
 
 void writeState(FILE *fp, int type, char *recvString = NULL)
 {
-    char *offset = GetOffset();
+    //char *offset = GetOffset();
+    char *offset = "";
 
     char *buf = g_buffer + g_msg_count * BUFSIZE;
 
@@ -437,6 +438,7 @@ int main (int argc, char* argv[])
     int bytesRem;
     int bytesSent;
 
+    char *offset = "";
     for (int k = 0; k < NUM_MESSAGES; k++)
     {
         for (int i = 0; i < g_peerCount; i++)
@@ -444,7 +446,7 @@ int main (int argc, char* argv[])
             if (sendFds[i] == -1)
                 break;
 
-            char *offset = GetOffset();
+            //char *offset = GetOffset();
             pthread_mutex_lock(&g_lock_lc);
             g_attime.createSendEvent();
             g_attime.mPhysicalTime = getCurrentPhysicalTime();
