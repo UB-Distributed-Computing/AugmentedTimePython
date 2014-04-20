@@ -443,6 +443,7 @@ int main (int argc, char* argv[])
             }
             
             free(offset);
+            close(sendFds[i]);
         }
         //usleep(250000);
         //sleepTime = rand() % 5;
