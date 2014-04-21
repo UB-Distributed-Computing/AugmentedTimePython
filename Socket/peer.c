@@ -50,20 +50,20 @@ __uint64_t getCurrentPhysicalTime()
 class ATTime
 {
     public:
-    __uint64_t mLogicalTime;
-    __uint64_t mLogicalCount;
-    __uint64_t mPhysicalTime;
+        __uint64_t mLogicalTime;
+        __uint64_t mLogicalCount;
+        __uint64_t mPhysicalTime;
 
-    ATTime()
-    {
-        mLogicalTime = 0;
-        mLogicalCount = 0;
-        mPhysicalTime = getCurrentPhysicalTime();
-    }
+        ATTime()
+        {
+            mLogicalTime = 0;
+            mLogicalCount = 0;
+            mPhysicalTime = getCurrentPhysicalTime();
+        }
 
-    void createSendEvent(); 
-    void createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString, ATTime* f);
-    void copyClock(ATTime *src);
+        void createSendEvent(); 
+        void createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString, ATTime* f);
+        void copyClock(ATTime *src);
 };
 
 // global time
@@ -78,6 +78,16 @@ void dumpBufferToFile(FILE *fp)
         buf = g_buffer + msg_count * BUFSIZE;
         fprintf (fp, "%s", buf);
     }
+    printf("Done writing from buffer %d message \n", g_msg_count);
+}
+
+void writeState(FILE *fp, int type, char *recvString = NULL)
+{
+    //char *offset = GetOffset();
+    char *offset = (char*)"";
+
+    char *buf = g_buffer + g_msg_count * BUFSIZE;
+
     switch(type)
     {
         case 0: // send event
@@ -127,7 +137,7 @@ void ATTime::createSendEvent()
 
     g_attime.copyClock(f);
     writeState(g_logfile, 0);
-    
+
     delete f;
 }
 
@@ -279,6 +289,9 @@ void* Receiver(void* dummy)
                     char * strLogCnt = strtok(NULL,":");
                     char * strPhyTime = strtok(NULL,":");
 
+                    printf ("%s\n", strLogClk);
+                    printf ("%s\n", strLogCnt);
+                    printf ("%s\n", strPhyTime);
                     __uint64_t LogClk = strtol(strLogClk,NULL,10);
                     __uint64_t LogCnt = strtol(strLogCnt,NULL,10);
                     __uint64_t PhyTime = strtol(strPhyTime,NULL,10);
@@ -472,7 +485,7 @@ int main (int argc, char* argv[])
                 bytesRem -= bytesSent;
                 messageHead += bytesSent;
             }
-            
+
             //free(offset);
         }
         //usleep(250000);
