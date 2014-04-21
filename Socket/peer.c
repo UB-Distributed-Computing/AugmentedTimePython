@@ -328,6 +328,12 @@ void* Receiver(void* dummy)
                         bytesRem -= bytesRecvd;
                         bufferHead += bytesRecvd;
                     }
+
+                    if (bytesRem != 0)
+                    {
+                        continue; // something wrong ignore this message
+                    }
+
                     ATTime *f = new ATTime();
                     strcpy(buffercopy, buffer);
                     char * chClient = strtok(buffer, ":");
