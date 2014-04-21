@@ -336,6 +336,10 @@ void* Receiver(void* dummy)
                     char * strPhyTime = strtok(NULL,":");
 
     printf ("__%s:%d__\n", __func__, __LINE__);
+    if (strLogClk == NULL)
+    {
+    printf ("__%s:%d__\n", __func__, __LINE__);
+    }
     printf ("%s\n", strLogClk);
     printf ("%s\n", strLogCnt);
     printf ("%s\n", strPhyTime);
