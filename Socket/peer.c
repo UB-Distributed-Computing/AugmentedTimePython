@@ -335,6 +335,9 @@ void* Receiver(void* dummy)
                     char * strPhyTime = strtok(NULL,":");
 
     printf ("__%s:%d__\n", __func__, __LINE__);
+    printf ("%s\n", strLogClk);
+    printf ("%s\n", strLogCnt);
+    printf ("%s\n", strPhyTime);
                     __uint64_t LogClk = strtol(strLogClk,NULL,10);
                     __uint64_t LogCnt = strtol(strLogCnt,NULL,10);
                     __uint64_t PhyTime = strtol(strPhyTime,NULL,10);
