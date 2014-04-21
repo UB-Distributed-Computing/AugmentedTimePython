@@ -289,9 +289,6 @@ void* Receiver(void* dummy)
                     char * strLogCnt = strtok(NULL,":");
                     char * strPhyTime = strtok(NULL,":");
 
-                    printf ("%s\n", strLogClk);
-                    printf ("%s\n", strLogCnt);
-                    printf ("%s\n", strPhyTime);
                     __uint64_t LogClk = strtol(strLogClk,NULL,10);
                     __uint64_t LogCnt = strtol(strLogCnt,NULL,10);
                     __uint64_t PhyTime = strtol(strPhyTime,NULL,10);
