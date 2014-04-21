@@ -84,7 +84,7 @@ void dumpBufferToFile(FILE *fp)
 void writeState(FILE *fp, int type, char *recvString = NULL)
 {
     //char *offset = GetOffset();
-    char *offset = "";
+    char *offset = (char*)"";
 
     char *buf = g_buffer + g_msg_count * BUFSIZE;
 
@@ -441,7 +441,7 @@ int main (int argc, char* argv[])
     int bytesRem;
     int bytesSent;
 
-    char *offset = "";
+    char *offset = (char*)"";
     for (int k = 0; k < NUM_MESSAGES; k++)
     {
         for (int i = 0; i < g_peerCount; i++)
