@@ -322,6 +322,7 @@ void* Receiver(void* dummy)
     printf ("__%s:%d__\n", __func__, __LINE__);
                             close(g_peerFds[i]);
                             g_peerFds[i] = -1;
+                            break;
                         }
 
                         bytesRem -= bytesRecvd;
