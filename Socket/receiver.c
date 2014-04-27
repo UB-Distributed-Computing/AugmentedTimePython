@@ -54,7 +54,7 @@ class ATTime
         mPhysicalTime = getCurrentPhysicalTime();
     }
 
-    void createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString);
+    void createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString, ATTime *f);
     void copyClock(ATTime *src);
 };
 
@@ -93,10 +93,9 @@ void ATTime::copyClock(ATTime *src)
     mPhysicalTime = src->mPhysicalTime;
 }
 
-void ATTime::createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString)
+void ATTime::createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString, ATTime *f)
 {
     ATTime *e = &g_attime;
-    ATTime *f = new ATTime(); // f physical time is up-to-date
 
     f->mLogicalTime = std::max(e->mLogicalTime, std::max(msgLogicalTime, f->mPhysicalTime));
 
@@ -122,6 +121,7 @@ void ATTime::createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCou
 
     delete f;
 }
+
 
 char* GetOffset()
 {
@@ -207,6 +207,7 @@ void* Receiver(void* dummy)
                         bufferHead += bytesRecvd;
                     }
 
+                    ATTime *f = new ATTime();
                     strcpy(buffercopy, buffer);
                     char * chClient = strtok(buffer, ":");
                     char * strLogClk = strtok(NULL,":");
@@ -217,7 +218,7 @@ void* Receiver(void* dummy)
                     __uint64_t LogCnt = strtol(strLogCnt,NULL,10);
                     __uint64_t PhyTime = strtol(strPhyTime,NULL,10);
 
-                    g_attime.createRecvEvent(LogClk, LogCnt, PhyTime, buffercopy);
+                    g_attime.createRecvEvent(LogClk, LogCnt, PhyTime, buffercopy, f);
                 }
             }
         }
