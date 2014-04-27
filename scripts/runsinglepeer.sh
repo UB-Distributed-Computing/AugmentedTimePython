@@ -1,5 +1,11 @@
 #!/bin/sh
 
+if [ "$1" == "" ]
+then
+    echo "Run with receiver ip address"
+    exit
+fi
+
 receiverip=$1
 cat data.txt |awk '{print $1}' > ips.txt
 
