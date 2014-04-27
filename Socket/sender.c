@@ -211,9 +211,9 @@ int main (int argc, char* argv[])
 {
     char *filename = (char *)"dump.log";
 
-    if(argc < 3)
+    if(argc < 2)
     {    
-        printf("\nUSAGE: peer myID <peer1> [<peer2> .......]\n");
+        printf("\nUSAGE: peer myID\n");
         exit(1);
     }
 
