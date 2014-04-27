@@ -2,14 +2,8 @@
 
 trap '{ echo "Script interrupted. Cleaning up"; rm -rf ips.txt command.sh; exit 1; }' INT
 
-if [ "$1" == "" ]
-then
-    echo "Run with receiver ip address"
-    exit
-fi
-
-receiverip=$1
 cat data.txt |awk '{print $1}' > ips.txt
+receiverip=`cat ips.txt |head -1`
 
 # for all ips in ips.txt file
 count=1
