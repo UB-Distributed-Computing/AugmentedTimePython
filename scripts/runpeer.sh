@@ -1,5 +1,7 @@
 #!/bin/sh
 
+trap '{ echo "Script interrupted. Cleaning up"; rm -rf ips.txt command.sh; exit 1; }' INT
+
 cat data.txt |awk '{print $1}' > ips.txt
 
 # for all ips in ips.txt file

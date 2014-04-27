@@ -1,5 +1,7 @@
 #!/bin/sh
 
+trap '{ echo "Script interrupted. Cleaning up"; rm -rf ips.txt logs.tar.gz logs numbers.txt big.log; exit 1; }' INT
+
 . getlogs.sh
 
 cwd=`pwd`

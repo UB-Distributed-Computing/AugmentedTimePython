@@ -1,5 +1,7 @@
 #!/bin/sh
 
+trap '{ echo "Script interrupted. Cleaning up"; rm -rf ips.txt command.sh; exit 1; }' INT
+
 if [ "$1" == "" ]
 then
     echo "Run with receiver ip address"

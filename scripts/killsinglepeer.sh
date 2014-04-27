@@ -2,6 +2,8 @@
 
 cat data.txt |awk '{print $1}' > ips.txt
 
+trap '{ echo "Script interrupted. Cleaning up"; rm -rf ips.txt command.sh; exit 1; }' INT
+
 # for all ips in ips.txt file
 count=1
 for myip in `cat ips.txt`
