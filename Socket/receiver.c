@@ -15,7 +15,7 @@
 char g_myID[3];
 unsigned long g_lc;
 int *g_peerFds = NULL;
-int g_maxFd, g_peerCount=3;
+int g_maxFd, g_peerCount;
 
 FILE *g_logfile = NULL;
 
@@ -289,13 +289,13 @@ int main (int argc, char* argv[])
         exit(1);
     }
 
+    g_peerCount = argc - 2;
+
     g_logfile = fopen("events.log", "w");
     assert (g_logfile != NULL);
 
     //set current peer's ID in myID
     sprintf(g_myID, "%s", argv[1]);
-
-
 
     //spawn the receiver
    // int err = pthread_create(&thread_id, NULL, &Receiver, (void*)&argv[2]);
