@@ -1,8 +1,8 @@
 #!/bin/sh
 
-trap '{ echo "Script interrupted. Cleaning up"; rm -rf ips.txt command.sh; exit 1; }' INT
-
 cat data.txt |awk '{print $1}' > ips.txt
+
+trap '{ echo "Script interrupted. Cleaning up"; rm -rf ips.txt command.sh; exit 1; }' INT
 
 # for all ips in ips.txt file
 count=1
@@ -12,7 +12,10 @@ do
 command="export LD_LIBRARY_PATH=~/AT/AugmentedTimePython/AT-ZMQ/lib"
 echo "$command" > command.sh
 
-command="sudo killall -9 peer"
+command="sudo killall -9 sender"
+echo "$command" >> command.sh
+
+command="sudo killall -9 receiver"
 echo "$command" >> command.sh
 
 command="exit"

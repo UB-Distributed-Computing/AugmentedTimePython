@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <errno.h>
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
@@ -21,10 +22,14 @@ int g_maxFd, g_peerCount;
 
 FILE *g_logfile = NULL;
 
-#define BUFSIZE 300
+char *g_buffer = NULL;
+unsigned g_msg_count = 0;
+
+#define BUFSIZE 150
 #define NUM_MESSAGES 1000
 char* GetOffset();
 void init (char** argv);
+void dumpBufferToFile(FILE *fp);
 
 void dieWithMessage(const char* msg)
 {
@@ -45,48 +50,67 @@ __uint64_t getCurrentPhysicalTime()
 class ATTime
 {
     public:
-    __uint64_t mLogicalTime;
-    __uint64_t mLogicalCount;
-    __uint64_t mPhysicalTime;
+        __uint64_t mLogicalTime;
+        __uint64_t mLogicalCount;
+        __uint64_t mPhysicalTime;
 
-    ATTime()
-    {
-        mLogicalTime = 0;
-        mLogicalCount = 0;
-        mPhysicalTime = getCurrentPhysicalTime();
-    }
+        ATTime()
+        {
+            mLogicalTime = 0;
+            mLogicalCount = 0;
+            mPhysicalTime = getCurrentPhysicalTime();
+        }
 
-    void createSendEvent(); 
-    void createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString, ATTime* f);
-    void copyClock(ATTime *src);
+        void createSendEvent(); 
+        void createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCount, __uint64_t msgPhysicalTime, char *recvString, ATTime* f);
+        void copyClock(ATTime *src);
 };
 
 // global time
 ATTime g_attime;
 
+void dumpBufferToFile(FILE *fp)
+{
+    char *buf = g_buffer;
+    printf("Writing from buffer %d message \n", g_msg_count);
+    for (int msg_count = 0; msg_count < g_msg_count; msg_count++)
+    {
+        buf = g_buffer + msg_count * BUFSIZE;
+        fprintf (fp, "%s", buf);
+    }
+    printf("Done writing from buffer %d message \n", g_msg_count);
+}
+
 void writeState(FILE *fp, int type, char *recvString = NULL)
 {
-    char *offset = GetOffset();
+    //char *offset = GetOffset();
+    char *offset = (char*)"";
+
+    char *buf = g_buffer + g_msg_count * BUFSIZE;
 
     switch(type)
     {
         case 0: // send event
-            fprintf (fp, "Send:");
-            fprintf (fp, "%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
+            //fprintf (fp, "Send:");
+            //fprintf (fp, "%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
             //fprintf (fp, "%s:%lu:%lu:%lu\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
+            snprintf (buf, BUFSIZE, "Send:%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, offset);
             break;
         case 1: // recv event
-            fprintf (fp, "Recv:");
-            fprintf (fp, "%s:%lu:[%lu]:%lu",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
+            //fprintf (fp, "Recv:");
+            //fprintf (fp, "%s:%lu:[%lu]:%lu",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             //fprintf (fp, ":%s:%s\n", offset, recvString);
-            fprintf (fp, ":%s\n",  recvString);
+            //fprintf (fp, ":%s\n",  recvString);
+            snprintf (buf, BUFSIZE, "Recv:%s:%lu:[%lu]:%lu:%s\n",g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime, recvString);
             break;
 
         default:
             break;
     }
 
-    free(offset);
+    //free(offset);
+
+    g_msg_count++;
 }
 
 void ATTime::copyClock(ATTime *src)
@@ -113,7 +137,7 @@ void ATTime::createSendEvent()
 
     g_attime.copyClock(f);
     writeState(g_logfile, 0);
-    
+
     delete f;
 }
 
@@ -148,41 +172,41 @@ void ATTime::createRecvEvent(__uint64_t msgLogicalTime, __uint64_t msgLogicalCou
 
 char* GetOffset()
 {
-	FILE *fp;
-  int status;
-  char path[1035];
-	char *ret = (char*)malloc(40);
+    FILE *fp;
+    int status;
+    char path[1035];
+    char *ret = (char*)malloc(40);
 
-  /* Open the command for reading. */
-  fp = popen("ntpdc -cloopinfo | grep offset", "r");
-  if (fp == NULL) {
-    printf("Failed to run command\n" );
-    exit(1);
-  }
+    /* Open the command for reading. */
+    fp = popen("ntpdc -cloopinfo | grep offset", "r");
+    if (fp == NULL) {
+        printf("Failed to run command\n" );
+        exit(1);
+    }
 
-  FILE* fp1 = popen("ntpdc -ckerninfo | grep offset", "r");
-  if (fp1 == NULL) {
-    printf("Failed to run command\n" );
-    exit(1);
-  }
-  
-  char path1[1035];
-  fgets(path1, sizeof(path)-1, fp1);
- strtok(path1, ":");
-        char *plloffsets = strtok(NULL, ":");
-        char *plloffset = strtok(plloffsets, " ");
-  /* Read the output a line at a time - output it. */
-  while (fgets(path, sizeof(path)-1, fp) != NULL) {
-	strtok(path, ":");    
-	char *offsets = strtok(NULL, ":");
-	char *offset = strtok(offsets, " ");
+    FILE* fp1 = popen("ntpdc -ckerninfo | grep offset", "r");
+    if (fp1 == NULL) {
+        printf("Failed to run command\n" );
+        exit(1);
+    }
+
+    char path1[1035];
+    fgets(path1, sizeof(path)-1, fp1);
+    strtok(path1, ":");
+    char *plloffsets = strtok(NULL, ":");
+    char *plloffset = strtok(plloffsets, " ");
+    /* Read the output a line at a time - output it. */
+    while (fgets(path, sizeof(path)-1, fp) != NULL) {
+        strtok(path, ":");    
+        char *offsets = strtok(NULL, ":");
+        char *offset = strtok(offsets, " ");
         sprintf(ret, "%s|%s", offset,plloffset);
-  }
+    }
 
-  /* close */
-  pclose(fp);
-  pclose(fp1);
-	return ret;
+    /* close */
+    pclose(fp);
+    pclose(fp1);
+    return ret;
 }
 
 void* Receiver(void* dummy)
@@ -193,6 +217,9 @@ void* Receiver(void* dummy)
     char buffer [BUFSIZE];
     char buffercopy[BUFSIZE];
     char *bufferHead = NULL;
+    struct timeval timeout;
+    timeout.tv_sec = 30;
+    timeout.tv_usec = 0;
 
     init((char **)dummy);
 
@@ -202,9 +229,10 @@ void* Receiver(void* dummy)
 
         for(i=0; i < g_peerCount; i++)
         {
-            FD_SET(g_peerFds[i], &rfds);
+            if (g_peerFds[i] != -1)
+                FD_SET(g_peerFds[i], &rfds);
         }
-        err = select(g_maxFd + 1, &rfds, NULL, NULL, NULL);
+        err = select(g_maxFd + 1, &rfds, NULL, NULL, &timeout);
 
         if (err == -1)
         {
@@ -214,6 +242,9 @@ void* Receiver(void* dummy)
         {
             for (i = 0; i < g_peerCount; i++)
             {
+                if (g_peerFds[i] == -1) // this peer already exited
+                    continue;
+
                 if(FD_ISSET(g_peerFds[i], &rfds))
                 {
                     bufferHead = buffer;
@@ -222,13 +253,35 @@ void* Receiver(void* dummy)
                     {
                         bytesRecvd = recv(g_peerFds[i], bufferHead, BUFSIZE, 0);
                         if(bytesRecvd < 0)
-                            dieWithMessage("recv() failed");
+                        {
+                            if (errno == EINTR || errno == EAGAIN)
+                            {
+                                printf ("recv() failed with error %d. Retrying...\n", errno);
+                                continue;
+                            }
+                            else
+                            {
+                                close(g_peerFds[i]);
+                                g_peerFds[i] = -1;
+                                break;
+                            }
+                        }
                         else if(bytesRecvd == 0)
-                            dieWithMessage("recv() Connection closed prematurely");
+                        {
+                            close(g_peerFds[i]);
+                            g_peerFds[i] = -1;
+                            break;
+                        }
 
                         bytesRem -= bytesRecvd;
                         bufferHead += bytesRecvd;
                     }
+
+                    if (bytesRem != 0)
+                    {
+                        continue; // something wrong ignore this message
+                    }
+
                     ATTime *f = new ATTime();
                     strcpy(buffercopy, buffer);
                     char * chClient = strtok(buffer, ":");
@@ -248,7 +301,15 @@ void* Receiver(void* dummy)
         }
         else
         {
-            dieWithMessage("Select timedout!");
+            for(i=0; i < g_peerCount; i++)
+            {
+                if (g_peerFds[i] != -1)
+                {
+                    close(g_peerFds[i]);
+                    g_peerFds[i] = -1;
+                }
+            }
+            return NULL; // timeout of 30 seconds. all done!
         }
     }
 }
@@ -293,7 +354,7 @@ void init (char* argv[])
         g_peerFds[i] = socket(AF_INET, SOCK_STREAM, 0);
         while((connect(g_peerFds[i], (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) < 0) && (retryCount > 0))
         {
-            sleep(1);
+            sleep(2);
             retryCount--;
         }
 
@@ -311,6 +372,13 @@ int main (int argc, char* argv[])
     if(argc < 3)
     {    
         printf("\nUSAGE: peer myID <peer1> [<peer2> .......]\n");
+        exit(1);
+    }
+
+    g_buffer = (char *)malloc(BUFSIZE * NUM_MESSAGES * (argc - 1));
+    if (g_buffer == NULL)
+    {
+        printf("Memory too low\n");
         exit(1);
     }
 
@@ -354,8 +422,11 @@ int main (int argc, char* argv[])
     servAddr.sin_port = htons(12345);               // Local port
 
     // Bind to the local address
-    if(bind(servSock, (struct sockaddr*) &servAddr, sizeof(servAddr)) < 0)
-        dieWithMessage("bind() failed");
+    while(bind(servSock, (struct sockaddr*) &servAddr, sizeof(servAddr)) < 0)
+    {
+        printf("bind() failed");
+        sleep(10);
+    }
 
     // Mark the socket so it will listen for incoming connections
     if(listen(servSock, g_peerCount) < 0)
@@ -375,17 +446,21 @@ int main (int argc, char* argv[])
     printf ("Accepted connections from all peers\n");
 
     //Send Logic starts
-    char message[300];
+    char message[BUFSIZE];
     char *messageHead = NULL;
     int sleepTime = 0;
     int bytesRem;
     int bytesSent;
-    while (1)
+
+    char *offset = (char*)"";
+    for (int k = 0; k < NUM_MESSAGES; k++)
     {
         for (int i = 0; i < g_peerCount; i++)
         {
+            if (sendFds[i] == -1)
+                break;
 
-            char *offset = GetOffset();
+            //char *offset = GetOffset();
             pthread_mutex_lock(&g_lock_lc);
             g_attime.createSendEvent();
             g_attime.mPhysicalTime = getCurrentPhysicalTime();
@@ -393,21 +468,39 @@ int main (int argc, char* argv[])
             //sprintf(message, "%s:%ld:%ld:%ld", g_myID, g_attime.mLogicalTime, g_attime.mLogicalCount, g_attime.mPhysicalTime);
             pthread_mutex_unlock(&g_lock_lc);
 
-            bytesRem = 300;
+            bytesRem = BUFSIZE;
             messageHead = message;
             while (bytesRem)
             {
-                bytesSent = send(sendFds[i], messageHead, 300, 0);
+                bytesSent = send(sendFds[i], messageHead, BUFSIZE, 0);
+                if (bytesSent == -1 && errno == ECONNRESET)
+                {
+                    close(sendFds[i]);
+                    sendFds[i] = -1;
+                    break;
+                }
                 bytesRem -= bytesSent;
                 messageHead += bytesSent;
             }
-            
-            free(offset);
+
+            //free(offset);
         }
         //usleep(250000);
         //sleepTime = rand() % 5;
         //sleep(sleepTime);
     }
 
+    for (int i = 0; i < g_peerCount; i++)
+    {
+        if (sendFds[i] != -1)
+        {
+            close(sendFds[i]);
+            sendFds[i] = -1;
+        }
+    }
+
+    sleep(30);
+    dumpBufferToFile(g_logfile);
+    fclose(g_logfile);
     return 0;
 }

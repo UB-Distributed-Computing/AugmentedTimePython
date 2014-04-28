@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
+#include <sys/time.h>
 //#include <DieWithMessage.h>
 #define BUFSIZE 1024
 
@@ -21,6 +21,16 @@ void dieWithUserMessage(char * msg, char* msg1)
     printf("%s: %s", msg, msg1);
     exit(0);
 }
+
+__uint64_t getCurrentPhysicalTime()
+{
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL); 
+
+    return tv.tv_sec * 1000000 + tv.tv_usec;
+}
+
 
 void HandleTCPClient(int clntSocket) 
 {
@@ -74,7 +84,7 @@ int main(int argc, char *argv[])
     // Mark the socket so it will listen for incoming connections
     if(listen(servSock, MAXPENDING) < 0)
         dieWithSystemMessage("listen() failed");
-
+	printf("Listening...\n");
     for(;;) // Run forever
     {
         struct sockaddr_in clntAddr; // Client address
@@ -82,6 +92,7 @@ int main(int argc, char *argv[])
         socklen_t clntAddrLen = sizeof(clntAddr);
         // Wait for a client to connect
         int clntSock = accept(servSock, (struct sockaddr *) &clntAddr, &clntAddrLen);
+printf("Accepted\n");
         if (clntSock < 0)
             dieWithSystemMessage("accept() failed");
         // clntSock is connected to a client!
