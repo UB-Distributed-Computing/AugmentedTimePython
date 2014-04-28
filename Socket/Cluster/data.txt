@@ -1,0 +1,4 @@
+54.187.134.176 AwsOregon.pem
+54.187.134.104 AwsOregon.pem
+54.187.142.58 AwsOregon.pem
+54.187.140.88 AwsOregon.pem
