@@ -20,7 +20,7 @@ do
 done
 
 rm -rf $cwd/numbers.txt
-for i in {0..9}
+for i in {0..20}
 do
     res=`cat big.log|grep "\[$i\]"|wc -l`
     echo "Count $i: $res" >> $cwd/numbers.txt
