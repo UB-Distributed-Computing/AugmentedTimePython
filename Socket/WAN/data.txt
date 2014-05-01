@@ -1,0 +1,4 @@
+54.187.148.25 AwsOregon.pem
+54.215.241.97 AwsNCalifornia.pem
+54.72.218.5 AwsIreland.pem
+54.178.191.92 AwsTokyo.pem
